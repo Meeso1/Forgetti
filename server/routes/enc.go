@@ -67,7 +67,24 @@ func EncryptRoute(c *gin.Context, s *services.ServiceContainer) {
 	c.JSON(http.StatusOK, response)
 }
 
+func DecryptRoute(c *gin.Context, s *services.ServiceContainer) {
+	var request dto.DecryptRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	decryptedContent, err := s.Encryptor.Decrypt(request.EncryptedContent, request.VerificationKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"decrypted_content": decryptedContent})
+}
+
 func AddEncRoutes(router *gin.Engine, serviceContainer *services.ServiceContainer) {
 	router.POST("/enc/new-key", func(c *gin.Context) { NewKeyRoute(c, serviceContainer) })
 	router.POST("/enc/encrypt", func(c *gin.Context) { EncryptRoute(c, serviceContainer) })
+	router.POST("/enc/decrypt", func(c *gin.Context) { DecryptRoute(c, serviceContainer) })
 }
