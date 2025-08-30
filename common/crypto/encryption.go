@@ -8,9 +8,6 @@ import (
 	"fmt"
 )
 
-type PublicKey = rsa.PublicKey
-type PrivateKey = rsa.PrivateKey
-
 // Encrypt encrypts content using RSA-OAEP with deterministic behavior
 func Encrypt(content string, key *PublicKey) (string, error) {
 	contentBytes := []byte(content)
