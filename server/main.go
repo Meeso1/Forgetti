@@ -1,7 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"ForgettiServer/routes"
+	"ForgettiServer/services"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	r := gin.Default()
+
+	serviceContainer := services.CreateServiceContainer()
+	routes.AddEncRoutes(r, serviceContainer)
+
+	r.Run(":8080")
 }
