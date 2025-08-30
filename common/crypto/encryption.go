@@ -1,61 +1,96 @@
 package crypto
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"math/big"
 )
 
-// Encrypt encrypts content using RSA-OAEP with deterministic behavior
+const paddingByte byte = 7
+const paddingSize int = 11
+
 func Encrypt(content string, key *PublicKey) (string, error) {
 	contentBytes := []byte(content)
 
-	// Create a deterministic seed from the content using SHA-256
-	hasher := sha256.New()
-	hasher.Write(contentBytes)
-	seed := hasher.Sum(nil)
+	// Chunk into parts that are significantly smaller than N
+	chunkSize := key.N.BitLen()/8 - paddingSize - 1
+	result := make([]byte, 0, len(contentBytes)/chunkSize+1)
+	for i := 0; i < len(contentBytes); i += chunkSize {
+		end := i + chunkSize
+		if end > len(contentBytes) {
+			end = len(contentBytes)
+		}
 
-	// Use the first 32 bytes of the hash as our deterministic seed
-	// This ensures the same content always produces the same ciphertext
-	deterministicReader := &DeterministicReader{seed: seed, pos: 0}
+		encryptedChunk, err := EncryptChunk(contentBytes[i:end], key)
+		if err != nil {
+			return "", fmt.Errorf("failed to encrypt chunk: %w", err)
+		}
 
-	// Encrypt using RSA-OAEP with SHA-256 and our deterministic seed
-	encryptedBytes, err := rsa.EncryptOAEP(sha256.New(), deterministicReader, key, contentBytes, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to encrypt content: %w", err)
+		result = append(result, encryptedChunk...)
 	}
 
-	return base64.StdEncoding.EncodeToString(encryptedBytes), nil
+	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-// Decrypt decrypts content using RSA-OAEP
+func EncryptChunk(chunk []byte, key *PublicKey) ([]byte, error) {
+	chunkWithPadding := make([]byte, key.N.BitLen()/8-1) // We need to ensure that the chunk is smaller than N
+	// Copy the chunk at the start
+	copy(chunkWithPadding, chunk)
+	// Fill the rest with 0s
+	for i := len(chunk); i < len(chunkWithPadding); i++ {
+		chunkWithPadding[i] = 0
+	}
+	// Fill the reserved space with padding bytes
+	for i := 0; i < paddingSize; i++ {
+		chunkWithPadding[len(chunkWithPadding)-i-1] = paddingByte
+	}
+
+	chunkAsInt := new(big.Int).SetBytes(chunkWithPadding)
+	encryptedChunkAsInt := new(big.Int).Exp(chunkAsInt, key.E, key.N)
+
+	encryptedBytes := make([]byte, key.N.BitLen()/8)
+	if encryptedChunkAsInt.BitLen() > key.N.BitLen()/8 {
+		return nil, fmt.Errorf("encrypted chunk is too large: %d > %d", encryptedChunkAsInt.BitLen(), key.N.BitLen()/8)
+	}
+
+	encryptedChunkAsInt.FillBytes(encryptedBytes)
+	return encryptedBytes, nil
+}
+
 func Decrypt(encryptedContent string, key *PrivateKey) (string, error) {
 	encryptedBytes, err := base64.StdEncoding.DecodeString(encryptedContent)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode base64 content: %w", err)
+		return "", fmt.Errorf("failed to decode encrypted content: %w", err)
 	}
 
-	decryptedBytes, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, key, encryptedBytes, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to decrypt content: %w", err)
+	chunkSize := key.N.BitLen() / 8
+	result := make([]byte, 0, len(encryptedBytes)/chunkSize+1)
+	for i := 0; i < len(encryptedBytes); i += chunkSize {
+		end := i + chunkSize
+		if end > len(encryptedBytes) {
+			end = len(encryptedBytes)
+		}
+
+		encryptedChunk, err := DecryptChunk(encryptedBytes[i:end], key)
+		if err != nil {
+			return "", fmt.Errorf("failed to decrypt chunk: %w", err)
+		}
+
+		result = append(result, encryptedChunk...)
 	}
 
-	return string(decryptedBytes), nil
+	return string(result), nil
 }
 
-// DeterministicReader provides a deterministic source of "randomness" for RSA-OAEP
-// by cycling through the provided seed bytes. This ensures deterministic encryption.
-type DeterministicReader struct {
-	seed []byte
-	pos  int
-}
+func DecryptChunk(chunk []byte, key *PrivateKey) ([]byte, error) {
+	chunkAsInt := new(big.Int).SetBytes(chunk)
+	decryptedChunkAsInt := new(big.Int).Exp(chunkAsInt, key.D, key.N)
 
-func (r *DeterministicReader) Read(p []byte) (n int, err error) {
-	for i := range p {
-		p[i] = r.seed[r.pos%len(r.seed)]
-		r.pos++
-	}
-	return len(p), nil
+	decryptedBytes := make([]byte, key.N.BitLen()/8 - 1)
+	decryptedChunkAsInt.FillBytes(decryptedBytes)
+
+	// Strip padding
+	endOfData := len(decryptedBytes) - paddingSize
+
+	return decryptedBytes[:endOfData], nil
 }

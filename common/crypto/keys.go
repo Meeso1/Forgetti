@@ -1,8 +1,15 @@
 package crypto
 
 import (
-	"crypto/rsa"
+	"math/big"
 )
 
-type PublicKey = rsa.PublicKey
-type PrivateKey = rsa.PrivateKey
+type PublicKey struct {
+	N *big.Int
+	E *big.Int
+}
+
+type PrivateKey struct {
+	N *big.Int
+	D *big.Int
+}

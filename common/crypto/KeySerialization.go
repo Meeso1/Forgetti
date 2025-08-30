@@ -1,13 +1,12 @@
 package crypto
 
 import (
-	"crypto/x509"
 	"encoding/base64"
-	"fmt"
+	"encoding/json"
 )
 
 func SerializePublicKey(publicKey *PublicKey) (string, error) {
-	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	publicKeyBytes, err := json.Marshal(publicKey)
 	if err != nil {
 		return "", err
 	}
@@ -21,20 +20,17 @@ func DeserializePublicKey(serialized string) (*PublicKey, error) {
 		return nil, err
 	}
 
-	deserialized, err := x509.ParsePKIXPublicKey(publicKeyBytes)
+	var publicKey PublicKey
+	err = json.Unmarshal(publicKeyBytes, &publicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if typed, ok := deserialized.(*PublicKey); ok {
-		return typed, nil
-	}
-
-	return nil, fmt.Errorf("deserialized public key is not an RSA public key")
+	return &publicKey, nil
 }
 
 func SerializePrivateKey(privateKey *PrivateKey) (string, error) {
-	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	privateKeyBytes, err := json.Marshal(privateKey)
 	if err != nil {
 		return "", err
 	}
@@ -48,14 +44,11 @@ func DeserializePrivateKey(serialized string) (*PrivateKey, error) {
 		return nil, err
 	}
 
-	privateKey, err := x509.ParsePKCS8PrivateKey(privateKeyBytes)
+	var privateKey PrivateKey
+	err = json.Unmarshal(privateKeyBytes, &privateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if typed, ok := privateKey.(*PrivateKey); ok {
-		return typed, nil
-	}
-
-	return nil, fmt.Errorf("deserialized private key is not an RSA private key")
+	return &privateKey, nil
 }
