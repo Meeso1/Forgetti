@@ -1,13 +1,12 @@
-package services
+package crypto
 
 import (
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 )
 
-func SerializePublicKey(publicKey *rsa.PublicKey) (string, error) {
+func SerializePublicKey(publicKey *PublicKey) (string, error) {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return "", err
@@ -16,7 +15,7 @@ func SerializePublicKey(publicKey *rsa.PublicKey) (string, error) {
 	return base64.StdEncoding.EncodeToString(publicKeyBytes), nil
 }
 
-func DeserializePublicKey(serialized string) (*rsa.PublicKey, error) {
+func DeserializePublicKey(serialized string) (*PublicKey, error) {
 	publicKeyBytes, err := base64.StdEncoding.DecodeString(serialized)
 	if err != nil {
 		return nil, err
@@ -27,14 +26,14 @@ func DeserializePublicKey(serialized string) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 
-	if typed, ok := deserialized.(*rsa.PublicKey); ok {
+	if typed, ok := deserialized.(*PublicKey); ok {
 		return typed, nil
 	}
 
 	return nil, fmt.Errorf("deserialized public key is not an RSA public key")
 }
 
-func SerializePrivateKey(privateKey *rsa.PrivateKey) (string, error) {
+func SerializePrivateKey(privateKey *PrivateKey) (string, error) {
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	if err != nil {
 		return "", err
@@ -43,7 +42,7 @@ func SerializePrivateKey(privateKey *rsa.PrivateKey) (string, error) {
 	return base64.StdEncoding.EncodeToString(privateKeyBytes), nil
 }
 
-func DeserializePrivateKey(serialized string) (*rsa.PrivateKey, error) {
+func DeserializePrivateKey(serialized string) (*PrivateKey, error) {
 	privateKeyBytes, err := base64.StdEncoding.DecodeString(serialized)
 	if err != nil {
 		return nil, err
@@ -54,7 +53,7 @@ func DeserializePrivateKey(serialized string) (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 
-	if typed, ok := privateKey.(*rsa.PrivateKey); ok {
+	if typed, ok := privateKey.(*PrivateKey); ok {
 		return typed, nil
 	}
 

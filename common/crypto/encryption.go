@@ -8,8 +8,11 @@ import (
 	"fmt"
 )
 
+type PublicKey = rsa.PublicKey
+type PrivateKey = rsa.PrivateKey
+
 // Encrypt encrypts content using RSA-OAEP with deterministic behavior
-func Encrypt(content string, key *rsa.PublicKey) (string, error) {
+func Encrypt(content string, key *PublicKey) (string, error) {
 	contentBytes := []byte(content)
 
 	// Create a deterministic seed from the content using SHA-256
@@ -31,7 +34,7 @@ func Encrypt(content string, key *rsa.PublicKey) (string, error) {
 }
 
 // Decrypt decrypts content using RSA-OAEP
-func Decrypt(encryptedContent string, key *rsa.PrivateKey) (string, error) {
+func Decrypt(encryptedContent string, key *PrivateKey) (string, error) {
 	encryptedBytes, err := base64.StdEncoding.DecodeString(encryptedContent)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode base64 content: %w", err)

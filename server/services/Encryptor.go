@@ -4,6 +4,7 @@ import (
 	"ForgettiServer/models"
 	"forgetti-common/crypto"
 	"time"
+	"github.com/google/uuid"
 )
 
 type Encryptor interface {
@@ -23,12 +24,18 @@ func CreateEncryptor(keyStore KeyStore) Encryptor {
 }
 
 func (e *EncryptorImpl) CreateNewKeyAndEncrypt(content string, expiration time.Time) (*models.NewKeyEncryptionResult, error) {
-	key, verificationKey, err := GenerateKey(expiration)
+	keyPair, err := crypto.GenerateKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
-	e.keyStore.StoreKey(*key)
+	key := models.BoradcastKey{
+		KeyId: uuid.New(),
+		Expiration: expiration,
+		Key: keyPair.BroadcastKey,
+	}
+
+	e.keyStore.StoreKey(key)
 
 	encryptedContent, err := crypto.Encrypt(content, key.Key)
 	if err != nil {
@@ -38,7 +45,7 @@ func (e *EncryptorImpl) CreateNewKeyAndEncrypt(content string, expiration time.T
 	return &models.NewKeyEncryptionResult{
 		KeyId:            key.KeyId.String(),
 		Expiration:       key.Expiration,
-		VerificationKey:  verificationKey,
+		VerificationKey:  keyPair.VerificationKey,
 		EncryptedContent: encryptedContent,
 	}, nil
 }
@@ -59,7 +66,7 @@ func (e *EncryptorImpl) EncryptWithExistingKey(content string, keyId string) (st
 
 // TODO: Remove
 func (e *EncryptorImpl) Decrypt(encryptedContent string, serializedVerificationKey string) (string, error) {
-	deserializedVerificationKey, err := DeserializePrivateKey(serializedVerificationKey)
+	deserializedVerificationKey, err := crypto.DeserializePrivateKey(serializedVerificationKey)
 	if err != nil {
 		return "", err
 	}

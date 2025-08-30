@@ -5,6 +5,7 @@ import (
 	"ForgettiServer/services"
 	"net/http"
 	"fmt"
+	"forgetti-common/crypto"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,7 +29,7 @@ func NewKeyRoute(c *gin.Context, s *services.ServiceContainer) {
 		return
 	}
 
-	verificationKey, err := services.SerializePrivateKey(newKey.VerificationKey)
+	verificationKey, err := crypto.SerializePrivateKey(newKey.VerificationKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("failed to serialize verification key: %w", err).Error()})
 		return
