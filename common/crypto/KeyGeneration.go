@@ -3,7 +3,9 @@ package crypto
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"math/big"
+	"strconv"
 )
 
 const keySize int = 2048
@@ -29,12 +31,10 @@ func MakeKeyPairFromRsaKey(rsaKey *rsa.PrivateKey) (*KeyPair, error) {
 
 	lambdaN := lambda(primes)
 
-	e, err := randomExponent(n)
+	e, d, err := getEAndD(n, lambdaN)
 	if err != nil {
 		return nil, err
 	}
-
-	d := new(big.Int).ModInverse(e, lambdaN)
 
 	return &KeyPair{
 		VerificationKey: &PrivateKey{
@@ -48,13 +48,30 @@ func MakeKeyPairFromRsaKey(rsaKey *rsa.PrivateKey) (*KeyPair, error) {
 	}, nil
 }
 
-func randomExponent(n *big.Int) (*big.Int, error) {
-	e, err := rand.Int(rand.Reader, new(big.Int).Sub(n, big.NewInt(minExponent)))
+func getEAndD(n *big.Int, lambdaN *big.Int) (*big.Int, *big.Int, error) {
+	const maxAttempts = 100
+	for i := 0; i < maxAttempts; i++ {
+		e, err := randFromRange(big.NewInt(minExponent), n)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		d := new(big.Int).ModInverse(e, lambdaN)
+		if d != nil {
+			return e, d, nil
+		}
+	}
+
+	return nil, nil, errors.New("failed to generate valid e and d after " + strconv.Itoa(maxAttempts) + " attempts")
+}
+
+func randFromRange(min, max *big.Int) (*big.Int, error) {
+	e, err := rand.Int(rand.Reader, new(big.Int).Sub(max, min))
 	if err != nil {
 		return nil, err
 	}
 
-	e.Add(e, big.NewInt(minExponent))
+	e.Add(e, min)
 	return e, nil
 }
 

@@ -49,8 +49,8 @@ func EncryptChunk(chunk []byte, key *PublicKey) ([]byte, error) {
 	encryptedChunkAsInt := new(big.Int).Exp(chunkAsInt, key.E, key.N)
 
 	encryptedBytes := make([]byte, key.N.BitLen()/8)
-	if encryptedChunkAsInt.BitLen() > key.N.BitLen()/8 {
-		return nil, fmt.Errorf("encrypted chunk is too large: %d > %d", encryptedChunkAsInt.BitLen(), key.N.BitLen()/8)
+	if encryptedChunkAsInt.BitLen()/8 > key.N.BitLen()/8 {
+		return nil, fmt.Errorf("encrypted chunk is too large: %d > %d", encryptedChunkAsInt.BitLen()/8, key.N.BitLen()/8)
 	}
 
 	encryptedChunkAsInt.FillBytes(encryptedBytes)
@@ -91,6 +91,13 @@ func DecryptChunk(chunk []byte, key *PrivateKey) ([]byte, error) {
 
 	// Strip padding
 	endOfData := len(decryptedBytes) - paddingSize
+
+	//TODO: Use escaping instead of stripping trailing 0s
+	if decryptedBytes[endOfData-1] == byte(0) {
+		for endOfData >= 0 && decryptedBytes[endOfData-1] == byte(0) {
+			endOfData--
+		}
+	}
 
 	return decryptedBytes[:endOfData], nil
 }

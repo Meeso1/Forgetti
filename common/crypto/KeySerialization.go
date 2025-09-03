@@ -3,6 +3,7 @@ package crypto
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 )
 
 func SerializePublicKey(publicKey *PublicKey) (string, error) {
@@ -24,6 +25,10 @@ func DeserializePublicKey(serialized string) (*PublicKey, error) {
 	err = json.Unmarshal(publicKeyBytes, &publicKey)
 	if err != nil {
 		return nil, err
+	}
+
+	if publicKey.N == nil || publicKey.E == nil {
+		return nil, fmt.Errorf("invalid public key: serialized JSON is missing required fields")
 	}
 
 	return &publicKey, nil
@@ -48,6 +53,10 @@ func DeserializePrivateKey(serialized string) (*PrivateKey, error) {
 	err = json.Unmarshal(privateKeyBytes, &privateKey)
 	if err != nil {
 		return nil, err
+	}
+
+	if privateKey.N == nil || privateKey.D == nil {
+		return nil, fmt.Errorf("invalid private key: serialized JSON is missing required fields")
 	}
 
 	return &privateKey, nil

@@ -27,8 +27,12 @@ clean:
 	go clean
 
 test:
+	make test-common
 	make test-cli
 	make test-server
+
+test-common:
+	cd common && go test ./... -v
 
 test-cli:
 	cd cli_tool && go test ./... -v
