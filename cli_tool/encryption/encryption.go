@@ -62,6 +62,7 @@ func getKeyBytes(key *Key) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	
 	if len(keyBytes) != 32 {
 		return nil, fmt.Errorf("function returned %d bytes, expected 32 bytes", len(keyBytes))
 	}

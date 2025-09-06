@@ -1,12 +1,24 @@
 package cmd
 
 import (
+	"Forgetti/commands"
 	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
+var decrypt_inputPath string
+var decrypt_outputPath string
+var decrypt_password string
+var decrypt_serverAddress string
+var decrypt_overwrite bool
+
 func init() {
+	decryptCmd.Flags().StringVarP(&decrypt_inputPath, "input-path", "i", "", "The path to the encrypted file")
+	decryptCmd.Flags().StringVarP(&decrypt_outputPath, "output-path", "o", "", "The path to the output file")
+	decryptCmd.Flags().StringVarP(&decrypt_password, "password", "p", "", "The password to decrypt the file with")
+	decryptCmd.Flags().StringVarP(&decrypt_serverAddress, "server-address", "s", "", "The address of the server to decrypt the file with")
+	decryptCmd.Flags().BoolVarP(&decrypt_overwrite, "overwrite", "w", false, "Overwrite the output file if it already exists")
+
 	rootCmd.AddCommand(decryptCmd)
 }
 
@@ -15,6 +27,22 @@ var decryptCmd = &cobra.Command{
 	Short: "Decrypt a file",
 	Long:  `Decrypt contents of a given file, writing the output to another specified file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Decrypting file...")
+		input, err := commands.CreateDecryptInput(
+			decrypt_inputPath, 
+			decrypt_outputPath, 
+			decrypt_password, 
+			decrypt_serverAddress,
+			decrypt_overwrite,
+		)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		err = commands.Decrypt(*input)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	},
 }

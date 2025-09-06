@@ -15,6 +15,7 @@ var readMetadataCmd = &cobra.Command{
 	Short: "Read metadata from an encrypted file",
 	Long:  `Read metadata from an encrypted file.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// TODO: Implement
 		fmt.Println("Reading metadata...")
 	},
 }

@@ -35,6 +35,8 @@ func GenerateKeyAndEncrypt(serverAddress string, key string, expiration time.Tim
 		Metadata: models.Metadata{
 			KeyId: response.Metadata.KeyId,
 			Expiration: response.Metadata.Expiration,
+			VerificationKey: response.Metadata.VerificationKey,
+			ServerAddress: serverAddress,
 		},
 	}, nil
 }

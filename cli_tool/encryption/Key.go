@@ -30,8 +30,8 @@ func (k *Key) GetBytes() ([]byte, error) {
 	}
 
 	result := make([]byte, len(k.LocalPart) + len(k.RemotePart))
-	result = append(result, k.LocalPart...)
-	result = append(result, k.RemotePart...)
+	copy(result[:len(k.LocalPart)], k.LocalPart)
+	copy(result[len(k.LocalPart):], k.RemotePart)
 
 	return result, nil
 }
