@@ -15,8 +15,8 @@ var decrypt_verbose bool
 var decrypt_quiet bool
 
 func init() {
-	decryptCmd.Flags().StringVarP(&decrypt_inputPath, "input-path", "i", "", "The path to the encrypted file")
-	decryptCmd.Flags().StringVarP(&decrypt_outputPath, "output-path", "o", "", "The path to the output file")
+	decryptCmd.Flags().StringVarP(&decrypt_inputPath, "input", "i", "", "The path to the encrypted file")
+	decryptCmd.Flags().StringVarP(&decrypt_outputPath, "output", "o", "", "The path to the output file")
 	decryptCmd.Flags().StringVarP(&decrypt_password, "password", "p", "", "The password to decrypt the file with")
 	decryptCmd.Flags().StringVarP(&decrypt_serverAddress, "server-address", "s", "", "The address of the server to decrypt the file with")
 	decryptCmd.Flags().BoolVarP(&decrypt_overwrite, "overwrite", "w", false, "Overwrite the output file if it already exists")

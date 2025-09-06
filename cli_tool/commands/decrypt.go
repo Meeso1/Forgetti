@@ -79,10 +79,7 @@ func Decrypt(input DecryptInput) error {
 		return err
 	}
 	logger.Verbose("Read metadata from file")
-	logger.Info("Encrypted content length: %d", len(contentWithMetadata.FileContent))
-	logger.Info("Key ID: %s", contentWithMetadata.Metadata.KeyId)
-	logger.Info("Expires at: %s (in %s)", contentWithMetadata.Metadata.Expiration.String(), time.Until(contentWithMetadata.Metadata.Expiration).String())
-	logger.Info("Server Address: %s", contentWithMetadata.Metadata.ServerAddress)
+	logger.Info("%s", contentWithMetadata.String())
 
 	if contentWithMetadata.Metadata.Expiration.Before(time.Now()) {
 		return fmt.Errorf("key has expired at %s (%s ago)", contentWithMetadata.Metadata.Expiration.String(), time.Since(contentWithMetadata.Metadata.Expiration).String())
