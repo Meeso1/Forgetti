@@ -6,6 +6,8 @@ import (
 	"Forgetti/io"
 	"Forgetti/models"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -80,8 +82,39 @@ func CreateEncryptInput(
 }
 
 func parseExpiration(expiresIn string) (time.Time, error) {
-	// TODO: Implement
-	return time.Now().Add(time.Duration(1) * time.Hour), nil
+	if expiresIn == "" {
+		return time.Time{}, fmt.Errorf("expiration is required")
+	}
+
+	unitMap := map[string]time.Duration{
+		"y":   365 * 24 * time.Hour, // year
+		"mo":  30 * 24 * time.Hour,  // month (approximate)
+		"w":   7 * 24 * time.Hour,   // week
+		"d":   24 * time.Hour,       // day
+		"h":   time.Hour,            // hour
+		"min": time.Minute,          // minute
+		"s":   time.Second,          // second
+	}
+
+	for suffix, duration := range unitMap {
+		if !strings.HasSuffix(expiresIn, suffix) {
+			continue
+		}
+
+		valueStr := strings.TrimSuffix(expiresIn, suffix)
+		value, err := strconv.ParseInt(valueStr, 10, 64)
+		if err != nil {
+			break
+		}
+
+		if value <= 0 {
+			break
+		}
+
+		return time.Now().Add(time.Duration(value) * duration), nil
+	}
+
+	return time.Time{}, fmt.Errorf("invalid duration format: '%s' (expected format: <number><unit> where unit is y/mo/w/d/h/min/s)", expiresIn)
 }
 
 func Encrypt(input EncryptInput) error {
