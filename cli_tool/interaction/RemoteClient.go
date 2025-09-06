@@ -50,7 +50,7 @@ func (r *RemoteClient) NewKey(content string, expiration time.Time) (*dto.NewKey
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("server returned status %d", resp.StatusCode)
+		return nil, handleApiError(resp)
 	}
 
 	var response dto.NewKeyResponse
@@ -83,7 +83,7 @@ func (r *RemoteClient) Encrypt(content string, keyId string) (*dto.EncryptRespon
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("server returned status %d", resp.StatusCode)
+		return nil, handleApiError(resp)
 	}
 
 	var response dto.EncryptResponse
@@ -92,4 +92,32 @@ func (r *RemoteClient) Encrypt(content string, keyId string) (*dto.EncryptRespon
 	}
 
 	return &response, nil
+}
+
+func handleApiError(resp *http.Response) error {
+	var response dto.ErrorResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if err := makePrettyError(response); err != nil {
+		return err
+	}
+
+	return fmt.Errorf("[%d] %s: %s", resp.StatusCode, response.ErrorCode, response.Message)
+}
+
+func makePrettyError(response dto.ErrorResponse) error {
+	switch response.ErrorCode {
+	case "key-not-found":
+		return fmt.Errorf("key %s does not exist on server - it could have expired, or another server was used to generate it", response.Data["key_id"])
+	case "key-expired":
+		return fmt.Errorf("key %s expired at %s", response.Data["key_id"], response.Data["expiration"])
+	case "bad-request":
+		return fmt.Errorf("request failed: %s", response.Data["error"])
+	case "internal-server-error":
+		return fmt.Errorf("server error: %s", response.Message)
+	default:
+		return nil
+	}
 }

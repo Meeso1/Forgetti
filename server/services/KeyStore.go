@@ -2,6 +2,7 @@ package services
 
 import (
 	"ForgettiServer/models"
+	"ForgettiServer/errors"
 	"fmt"
 	"time"
 )
@@ -42,13 +43,13 @@ func (k *KeyStoreImpl) GetKey(keyId string) (*models.BoradcastKey, error) {
 			// Cleanup from recently expired
 			if expiration.Before(time.Now().Add(-recentlyExpiredDuration)) {
 				delete(k.recentlyExpired, keyId)
-				return nil, fmt.Errorf("key with id %s not found", keyId)
+				return nil, errors.KeyNotFoundError(keyId)
 			}
 
-			return nil, fmt.Errorf("key with id %s has expired at %s", keyId, expiration.Format(time.RFC3339))
+			return nil, errors.KeyExpiredError(keyId, expiration)
 		}
 
-		return nil, fmt.Errorf("key with id %s not found", keyId)
+		return nil, errors.KeyNotFoundError(keyId)
 	}
 
 	// Expiration check
@@ -56,13 +57,13 @@ func (k *KeyStoreImpl) GetKey(keyId string) (*models.BoradcastKey, error) {
 		// If key expired more than 24 hours ago, remove and return not found
 		if key.Expiration.Before(time.Now().Add(-recentlyExpiredDuration)) {
 			delete(k.keys, keyId)
-			return nil, fmt.Errorf("key with id %s not found", keyId)
+			return nil, errors.KeyNotFoundError(keyId)
 		}
 
 		k.recentlyExpired[keyId] = key.Expiration
 		delete(k.keys, keyId)
 
-		return nil, fmt.Errorf("key with id %s has expired at %s", keyId, key.Expiration.Format(time.RFC3339))
+		return nil, errors.KeyExpiredError(keyId, key.Expiration)
 	}
 
 	return &key, nil

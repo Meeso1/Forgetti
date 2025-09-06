@@ -6,34 +6,29 @@ import (
 	"forgetti-common/constants"
 	"forgetti-common/crypto"
 	"forgetti-common/dto"
-	"net/http"
+	apiErrors "ForgettiServer/errors"
 
 	"github.com/gin-gonic/gin"
 )
 
-func NewKeyRoute(c *gin.Context, s *services.ServiceContainer) {
+func newKeyRoute(c *gin.Context, s *services.ServiceContainer) (*dto.NewKeyResponse, error) {
 	var request dto.NewKeyRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, apiErrors.BadRequestError(err)
 	}
 
 	if err := request.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, apiErrors.BadRequestError(err)
 	}
 
 	newKey, err := s.Encryptor.CreateNewKeyAndEncrypt(request.Content, request.Expiration)
 	if err != nil {
-		// TODO: Improve
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
 	verificationKey, err := crypto.SerializePrivateKey(newKey.VerificationKey)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("failed to serialize verification key: %w", err).Error()})
-		return
+		return nil, fmt.Errorf("failed to serialize verification key: %w", err)
 	}
 
 	response := dto.NewKeyResponse{
@@ -45,48 +40,28 @@ func NewKeyRoute(c *gin.Context, s *services.ServiceContainer) {
 		},
 	}
 
-	c.JSON(http.StatusOK, response)
+	return &response, nil
 }
 
-func EncryptRoute(c *gin.Context, s *services.ServiceContainer) {
+func encryptRoute(c *gin.Context, s *services.ServiceContainer) (*dto.EncryptResponse, error) {
 	var request dto.EncryptRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		return nil, apiErrors.BadRequestError(err)
 	}
 
 	encryptedContent, err := s.Encryptor.EncryptWithExistingKey(request.Content, request.KeyId)
 	if err != nil {
-		// TODO: Improve
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
 	response := dto.EncryptResponse{
 		EncryptedContent: encryptedContent,
 	}
 
-	c.JSON(http.StatusOK, response)
-}
-
-func DecryptRoute(c *gin.Context, s *services.ServiceContainer) {
-	var request dto.DecryptRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	decryptedContent, err := s.Encryptor.Decrypt(request.EncryptedContent, request.VerificationKey)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"decrypted_content": decryptedContent})
+	return &response, nil
 }
 
 func AddEncRoutes(router *gin.Engine, serviceContainer *services.ServiceContainer) {
-	router.POST(constants.NewKeyRoute, func(c *gin.Context) { NewKeyRoute(c, serviceContainer) })
-	router.POST(constants.EncryptRoute, func(c *gin.Context) { EncryptRoute(c, serviceContainer) })
-	router.POST(constants.DecryptRoute, func(c *gin.Context) { DecryptRoute(c, serviceContainer) })
+	router.POST(constants.NewKeyRoute, createEndpoint(serviceContainer, newKeyRoute))
+	router.POST(constants.EncryptRoute, createEndpoint(serviceContainer, encryptRoute))
 }

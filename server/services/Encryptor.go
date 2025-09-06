@@ -10,7 +10,6 @@ import (
 type Encryptor interface {
 	CreateNewKeyAndEncrypt(content string, expiration time.Time) (*models.NewKeyEncryptionResult, error)
 	EncryptWithExistingKey(content string, keyId string) (string, error)
-	Decrypt(encryptedContent string, keyId string) (string, error)
 }
 
 type EncryptorImpl struct {
@@ -62,19 +61,4 @@ func (e *EncryptorImpl) EncryptWithExistingKey(content string, keyId string) (st
 	}
 
 	return encryptedContent, nil
-}
-
-// TODO: Remove
-func (e *EncryptorImpl) Decrypt(encryptedContent string, serializedVerificationKey string) (string, error) {
-	deserializedVerificationKey, err := crypto.DeserializePrivateKey(serializedVerificationKey)
-	if err != nil {
-		return "", err
-	}
-
-	decryptedContent, err := crypto.Decrypt(encryptedContent, deserializedVerificationKey)
-	if err != nil {
-		return "", err
-	}
-
-	return decryptedContent, nil
 }
