@@ -17,10 +17,12 @@ build:
 build-cli:
 	mkdir -p $(BINARY_DIR)
 	cd cli_tool && go build $(LDFLAGS) -o ../$(BINARY_DIR)/$(BINARY_NAME_CLI)
+	cp cli_tool/config.json $(BINARY_DIR)/.config.json
 
 build-server:
 	mkdir -p $(BINARY_DIR)
 	cd server && go build $(LDFLAGS) -o ../$(BINARY_DIR)/$(BINARY_NAME_SERVER)
+	cp server/config.json $(BINARY_DIR)/config.json
 
 clean:
 	rm -rf $(BINARY_DIR)

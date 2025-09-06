@@ -2,32 +2,21 @@ package io
 
 import (
 	"Forgetti/models"
+	"forgetti-common/io"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 )
 
 func FileExists(path string) bool {
-	_, err := os.Stat(path)
-	return !os.IsNotExist(err)
+	return io.FileExists(path)
 }
 
-// TODO: Instead of reading everything to memory, implement encryption chunk by chunk
 func ReadFile(path string) ([]byte, error) {
-	return os.ReadFile(path)
+	return io.ReadFile(path)
 }
 
 func WriteFile(path string, overwrite bool, data []byte) error {
-	if FileExists(path) && !overwrite {
-		return fmt.Errorf("file already exists: '%s'", path)
-	}
-
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return fmt.Errorf("failed to create directories: '%s'", path)
-	}
-
-	return os.WriteFile(path, data, 0644)
+	return io.WriteFile(path, overwrite, data)
 }
 
 // TODO: Using just JSON is stupid - write metadata and then raw bytes
@@ -37,11 +26,11 @@ func WriteContentWithMetadataToFile(path string, overwrite bool, data *models.Fi
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
-	return WriteFile(path, overwrite, jsonData)
+	return io.WriteFile(path, overwrite, jsonData)
 }
 
 func ReadContentWithMetadataFromFile(path string) (*models.FileContentWithMetadata, error) {
-	jsonData, err := ReadFile(path)
+	jsonData, err := io.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}

@@ -1,13 +1,12 @@
 package services
 
 import (
-	"ForgettiServer/models"
+	"ForgettiServer/config"
 	"ForgettiServer/errors"
+	"ForgettiServer/models"
 	"fmt"
 	"time"
 )
-
-const recentlyExpiredDuration time.Duration = 24 * time.Hour
 
 type KeyStore interface {
 	StoreKey(key models.BoradcastKey) error
@@ -16,14 +15,16 @@ type KeyStore interface {
 
 // TODO: Store keys in a database
 type KeyStoreImpl struct {
-	keys map[string]models.BoradcastKey
-	recentlyExpired map[string]time.Time
+	keys                    map[string]models.BoradcastKey
+	recentlyExpired         map[string]time.Time
+	recentlyExpiredDuration time.Duration
 }
 
-func CreateKeyStore() KeyStore {
+func CreateKeyStore(cfg *config.Config) KeyStore {
 	return &KeyStoreImpl{
-		keys: make(map[string]models.BoradcastKey),
-		recentlyExpired: make(map[string]time.Time),
+		keys:                    make(map[string]models.BoradcastKey),
+		recentlyExpired:         make(map[string]time.Time),
+		recentlyExpiredDuration: cfg.KeyStore.RecentlyExpiredDuration,
 	}
 }
 
@@ -41,7 +42,7 @@ func (k *KeyStoreImpl) GetKey(keyId string) (*models.BoradcastKey, error) {
 	if !ok {
 		if expiration, ok := k.recentlyExpired[keyId]; ok {
 			// Cleanup from recently expired
-			if expiration.Before(time.Now().Add(-recentlyExpiredDuration)) {
+			if expiration.Before(time.Now().Add(-k.recentlyExpiredDuration)) {
 				delete(k.recentlyExpired, keyId)
 				return nil, errors.KeyNotFoundError(keyId)
 			}
@@ -54,8 +55,8 @@ func (k *KeyStoreImpl) GetKey(keyId string) (*models.BoradcastKey, error) {
 
 	// Expiration check
 	if key.Expiration.Before(time.Now()) {
-		// If key expired more than 24 hours ago, remove and return not found
-		if key.Expiration.Before(time.Now().Add(-recentlyExpiredDuration)) {
+		// If key expired more than the configured duration ago, remove and return not found
+		if key.Expiration.Before(time.Now().Add(-k.recentlyExpiredDuration)) {
 			delete(k.keys, keyId)
 			return nil, errors.KeyNotFoundError(keyId)
 		}

@@ -1,0 +1,14 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 8080,
+    "mode": "release"
+  },
+  "keystore": {
+    "recently_expired_duration": "24h"
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  }
+}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 const defaultConfigPath = ".config.json"
@@ -18,6 +19,15 @@ func GetConfigPath() string {
 	envConfigPath := os.Getenv(configPathEnvVar)
 	if envConfigPath != "" {
 		return envConfigPath
+	}
+
+	// If the default path is relative, make it relative to the binary's directory
+	if !filepath.IsAbs(defaultConfigPath) {
+		execPath, err := os.Executable()
+		if err == nil {
+			binDir := filepath.Dir(execPath)
+			return filepath.Join(binDir, defaultConfigPath)
+		}
 	}
 
 	return defaultConfigPath
