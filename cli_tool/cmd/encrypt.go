@@ -16,6 +16,7 @@ func init() {
 	encryptCmd.Flags().BoolVarP(&encrypt_overwrite, "overwrite", "w", false, "Overwrite the output file if it already exists")
 	encryptCmd.Flags().BoolVarP(&encrypt_verbose, "verbose", "v", false, "Verbose output")
 	encryptCmd.Flags().BoolVarP(&encrypt_quiet, "quiet", "q", false, "Quiet output")
+	encryptCmd.Flags().BoolVarP(&encrypt_nonInteractive, "non-interactive", "n", false, "Non-interactive mode - generate random password without prompts")
 
 	rootCmd.AddCommand(encryptCmd)
 }
@@ -28,6 +29,7 @@ var encrypt_outputPath string
 var encrypt_overwrite bool
 var encrypt_verbose bool
 var encrypt_quiet bool
+var encrypt_nonInteractive bool
 
 var encryptCmd = &cobra.Command{
 	Use:   "encrypt",
@@ -35,7 +37,7 @@ var encryptCmd = &cobra.Command{
 	Long:  `Encrypt contents of a given file, writing the output to another specified file.`,
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := promptForPasswordIfEmpty(&encrypt_password); err != nil {
+		if err := promptForEncryptPasswordIfEmpty(&encrypt_password, encrypt_nonInteractive); err != nil {
 			fmt.Println(err)
 			return
 		}

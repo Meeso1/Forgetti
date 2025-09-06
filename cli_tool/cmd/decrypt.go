@@ -14,6 +14,7 @@ var decrypt_serverAddress string
 var decrypt_overwrite bool
 var decrypt_verbose bool
 var decrypt_quiet bool
+var decrypt_nonInteractive bool
 
 func init() {
 	decryptCmd.Flags().StringVarP(&decrypt_inputPath, "input", "i", "", "The path to the encrypted file")
@@ -23,6 +24,7 @@ func init() {
 	decryptCmd.Flags().BoolVarP(&decrypt_overwrite, "overwrite", "w", false, "Overwrite the output file if it already exists")
 	decryptCmd.Flags().BoolVarP(&decrypt_verbose, "verbose", "v", false, "Verbose output")
 	decryptCmd.Flags().BoolVarP(&decrypt_quiet, "quiet", "q", false, "Quiet output")
+	decryptCmd.Flags().BoolVarP(&decrypt_nonInteractive, "non-interactive", "n", false, "Non-interactive mode - no prompts will be shown")
 
 	rootCmd.AddCommand(decryptCmd)
 }
@@ -32,7 +34,7 @@ var decryptCmd = &cobra.Command{
 	Short: "Decrypt a file",
 	Long:  `Decrypt contents of a given file, writing the output to another specified file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := promptForPasswordIfEmpty(&decrypt_password); err != nil {
+		if err := promptForDecryptPasswordIfEmpty(&decrypt_password, decrypt_nonInteractive); err != nil {
 			fmt.Println(err)
 			return
 		}
