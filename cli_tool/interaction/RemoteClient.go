@@ -24,16 +24,6 @@ func NewRemoteClient(baseURL string) *RemoteClient {
 	}
 }
 
-func (r *RemoteClient) Connect() error {
-	// Simple connectivity test by trying to connect to the base URL
-	resp, err := r.httpClient.Get(r.baseURL)
-	if err != nil {
-		return fmt.Errorf("failed to connect to server: %w", err)
-	}
-	defer resp.Body.Close()
-	return nil
-}
-
 func (r *RemoteClient) NewKey(content string, expiration time.Time) (*dto.NewKeyResponse, error) {
 	request := dto.NewKeyRequest{
 		Content:    content,
