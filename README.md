@@ -24,8 +24,36 @@ make build
 
 ## Usage
 
+The Forgetti CLI provides three main commands: `encrypt`, `decrypt`, and `metadata`.
+
+### Encrypt a file
+
 ```bash
-# Coming soon...
+# Basic encryption 
+./bin/forgetti-cli encrypt -i myfile.txt -o myfile.txt.forgetti
+
+# Encrypt with custom expiration time (1 week)
+./bin/forgetti-cli encrypt -i document.pdf -o document.pdf.forgetti -e 1w
+
+# Encrypt with custom server
+./bin/forgetti-cli encrypt -i secret.txt -o secret.txt.forgetti -s http://localhost:8080
+```
+
+### Decrypt a file
+
+```bash
+# Basic decryption
+./bin/forgetti-cli decrypt -i myfile.txt.forgetti -o myfile_decrypted.txt
+
+# Decrypt with custom server
+./bin/forgetti-cli decrypt -i secret.txt.forgetti -o secret_restored.txt -s http://localhost:8080
+```
+
+### Read metadata from encrypted files
+
+```bash
+# View metadata of an encrypted file
+./bin/forgetti-cli metadata -i myfile.txt.forgetti
 ```
 
 ## Development
