@@ -5,7 +5,7 @@
     "mode": "release"
   },
   "keystore": {
-    "recently_expired_duration": "24h"
+    "recently_expired_duration": 24
   },
   "logging": {
     "level": "info",

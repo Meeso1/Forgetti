@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"time"
 	"forgetti-common/io"
 
 	"github.com/go-playground/validator/v10"
@@ -17,7 +16,7 @@ type Config struct {
 	} `json:"server"`
 
 	KeyStore struct {
-		RecentlyExpiredDuration time.Duration `json:"recently_expired_duration" env:"KEYSTORE_RECENTLY_EXPIRED_DURATION" env-default:"24h" validate:"min=1h,max=168h"`
+		RecentlyExpiredDurationHours int `json:"recently_expired_duration" env:"KEYSTORE_RECENTLY_EXPIRED_DURATION" env-default:"24" validate:"min=1,max=168"`
 	} `json:"keystore"`
 
 	Logging struct {

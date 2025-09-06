@@ -24,7 +24,7 @@ func CreateKeyStore(cfg *config.Config) KeyStore {
 	return &KeyStoreImpl{
 		keys:                    make(map[string]models.BoradcastKey),
 		recentlyExpired:         make(map[string]time.Time),
-		recentlyExpiredDuration: cfg.KeyStore.RecentlyExpiredDuration,
+		recentlyExpiredDuration: time.Duration(cfg.KeyStore.RecentlyExpiredDurationHours) * time.Hour,
 	}
 }
 

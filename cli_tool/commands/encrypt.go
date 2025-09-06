@@ -168,6 +168,7 @@ func Encrypt(input EncryptInput) error {
 		return err
 	}
 
+	logger.Info("\n")
 	logger.Info("Output:         %s (%d bytes)", input.OutputPath, len(encryptedContent))
 	logger.Info("Key ID:         %s", interactionResult.Metadata.KeyId)
 	logger.Info("Expires at:     %s (in %s)", interactionResult.Metadata.Expiration.String(), time.Until(interactionResult.Metadata.Expiration).String())
