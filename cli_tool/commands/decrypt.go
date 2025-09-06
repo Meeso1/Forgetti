@@ -69,7 +69,6 @@ func CreateDecryptInput(
 	}, nil
 }
 
-// TODO: Handle HTTP errors in a pretty way
 func Decrypt(input DecryptInput) error {
 	logger := MakeLogger(input.LogLevel)
 

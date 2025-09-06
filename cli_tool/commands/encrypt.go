@@ -65,7 +65,6 @@ func CreateEncryptInput(
 	}
 
 	if password == "" {
-		// TODO: Generate password + allow interactive input
 		return nil, fmt.Errorf("password is required")
 	}
 
