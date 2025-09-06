@@ -1,11 +1,12 @@
 package routes
 
 import (
-	"ForgettiServer/dto"
 	"ForgettiServer/services"
-	"net/http"
 	"fmt"
+	"forgetti-common/constants"
 	"forgetti-common/crypto"
+	"forgetti-common/dto"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,8 +39,8 @@ func NewKeyRoute(c *gin.Context, s *services.ServiceContainer) {
 	response := dto.NewKeyResponse{
 		EncryptedContent: newKey.EncryptedContent,
 		Metadata: dto.Metadata{
-			KeyId: newKey.KeyId,
-			Expiration: newKey.Expiration,
+			KeyId:           newKey.KeyId,
+			Expiration:      newKey.Expiration,
 			VerificationKey: verificationKey,
 		},
 	}
@@ -74,7 +75,7 @@ func DecryptRoute(c *gin.Context, s *services.ServiceContainer) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	decryptedContent, err := s.Encryptor.Decrypt(request.EncryptedContent, request.VerificationKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -85,7 +86,7 @@ func DecryptRoute(c *gin.Context, s *services.ServiceContainer) {
 }
 
 func AddEncRoutes(router *gin.Engine, serviceContainer *services.ServiceContainer) {
-	router.POST("/enc/new-key", func(c *gin.Context) { NewKeyRoute(c, serviceContainer) })
-	router.POST("/enc/encrypt", func(c *gin.Context) { EncryptRoute(c, serviceContainer) })
-	router.POST("/enc/decrypt", func(c *gin.Context) { DecryptRoute(c, serviceContainer) })
+	router.POST(constants.NewKeyRoute, func(c *gin.Context) { NewKeyRoute(c, serviceContainer) })
+	router.POST(constants.EncryptRoute, func(c *gin.Context) { EncryptRoute(c, serviceContainer) })
+	router.POST(constants.DecryptRoute, func(c *gin.Context) { DecryptRoute(c, serviceContainer) })
 }

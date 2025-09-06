@@ -3,8 +3,8 @@ module Forgetti
 go 1.21.5
 
 require (
+	forgetti-common v0.0.0
 	github.com/spf13/cobra v1.9.1
-	// forgetti-common v0.0.0
 )
 
 require (

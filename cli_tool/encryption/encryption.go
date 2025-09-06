@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-func Encrypt(content []byte, key Key) ([]byte, error) {
+func Encrypt(content []byte, key *Key) ([]byte, error) {
 	keyBytes, err := getKeyBytes(key)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func Encrypt(content []byte, key Key) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, content, nil), nil
 }
 
-func Decrypt(content []byte, key Key) ([]byte, error) {
+func Decrypt(content []byte, key *Key) ([]byte, error) {
 	keyBytes, err := getKeyBytes(key)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func Decrypt(content []byte, key Key) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
 
-func getKeyBytes(key Key) ([]byte, error) {
+func getKeyBytes(key *Key) ([]byte, error) {
 	keyBytes, err := key.GetBytes()
 	if err != nil {
 		return nil, err

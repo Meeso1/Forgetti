@@ -9,7 +9,7 @@ import (
 const maxExpiration time.Duration = 30 * 24 * time.Hour
 
 type NewKeyRequest struct {
-	Content string `json:"content" binding:"required,min=1,max=1000"`
+	Content    string    `json:"content" binding:"required,min=1,max=1000"`
 	Expiration time.Time `json:"expiration" binding:"required"`
 }
 
