@@ -2,6 +2,7 @@ package interaction
 
 import (
 	"forgetti-common/crypto"
+	"Forgetti/encryption"
 	"Forgetti/models"
 	"time"
 	"fmt"
@@ -12,8 +13,13 @@ type KeyGenerationResult struct {
 	Metadata models.Metadata
 }
 
-func GenerateKeyAndEncrypt(serverAddress string, keyHash string, expiration time.Time) (*KeyGenerationResult, error) {
+func GenerateKeyAndEncrypt(serverAddress string, key string, expiration time.Time) (*KeyGenerationResult, error) {
 	remoteClient := NewRemoteClient(serverAddress)
+
+	keyHash, err := encryption.HashRemotePartForEncryption(key)
+	if err != nil {
+		return nil, err
+	}
 
 	response, err := remoteClient.NewKey(keyHash, expiration)
 	if err != nil {
@@ -33,8 +39,13 @@ func GenerateKeyAndEncrypt(serverAddress string, keyHash string, expiration time
 	}, nil
 }
 
-func EncryptWithExistingKey(serverAddress string, keyHash string, metadata *models.Metadata) (string, error) {
+func EncryptWithExistingKey(serverAddress string, key string, metadata *models.Metadata) (string, error) {
 	remoteClient := NewRemoteClient(serverAddress)
+
+	keyHash, err := encryption.HashRemotePartForEncryption(key)
+	if err != nil {
+		return "", err
+	}
 
 	response, err := remoteClient.Encrypt(keyHash, metadata.KeyId)
 	if err != nil {

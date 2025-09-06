@@ -12,8 +12,8 @@ type Metadata struct {
 }
 
 type FileContentWithMetadata struct {
-	FileContent  string   `json:"file_content"`
-	Metadata Metadata `json:"metadata"`
+	FileContent []byte `json:"file_content"`
+	Metadata  Metadata `json:"metadata"`
 }
 
 func ToFileMetadata(metadata dto.Metadata) *Metadata {
