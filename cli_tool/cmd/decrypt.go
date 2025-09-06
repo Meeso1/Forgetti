@@ -32,7 +32,7 @@ var decryptCmd = &cobra.Command{
 	Short: "Decrypt a file",
 	Long:  `Decrypt contents of a given file, writing the output to another specified file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := promptForPasswordIfEmpty(&decrypt_password, "Enter password: "); err != nil {
+		if err := promptForPasswordIfEmpty(&decrypt_password); err != nil {
 			fmt.Println(err)
 			return
 		}

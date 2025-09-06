@@ -17,12 +17,21 @@ func promptForPassword(prompt string) (string, error) {
 	return string(password), nil
 }
 
-func promptForPasswordIfEmpty(password *string, prompt string) error {
+func promptForPasswordIfEmpty(password *string) error {
 	if *password == "" {
 		var err error
-		*password, err = promptForPassword(prompt)
+		*password, err = promptForPassword("Enter password: ")
 		if err != nil {
 			return err
+		}
+
+		confirmPassword, err := promptForPassword("Confirm password: ")
+		if err != nil {
+			return err
+		}
+
+		if *password != confirmPassword {
+			return fmt.Errorf("passwords do not match")
 		}
 	}
 	return nil

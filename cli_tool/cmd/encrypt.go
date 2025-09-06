@@ -35,7 +35,7 @@ var encryptCmd = &cobra.Command{
 	Long:  `Encrypt contents of a given file, writing the output to another specified file.`,
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := promptForPasswordIfEmpty(&encrypt_password, "Enter password: "); err != nil {
+		if err := promptForPasswordIfEmpty(&encrypt_password); err != nil {
 			fmt.Println(err)
 			return
 		}
