@@ -12,6 +12,7 @@ import (
 
 const configFile = "config.json"
 
+// TODO: add logger (maybe extend console logger?)
 func main() {
 	cfg, err := config.LoadFromFile(configFile)
 	if err != nil {

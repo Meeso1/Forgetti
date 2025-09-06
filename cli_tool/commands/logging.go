@@ -12,7 +12,6 @@ const (
 	LogLevelError
 )
 
-// TODO: log to file too
 type Logger interface {
 	Verbose(message string, args ...any)
 	Info(message string, args ...any)
