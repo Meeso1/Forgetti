@@ -10,6 +10,9 @@ import (
 	"golang.org/x/term"
 )
 
+const passwordEnv = "FORGETTI_PASSWORD"
+const generatedPasswordLength = 16
+
 func promptForPassword(prompt string) (string, error) {
 	fmt.Print(prompt)
 	password, err := term.ReadPassword(int(os.Stdin.Fd()))
@@ -20,7 +23,6 @@ func promptForPassword(prompt string) (string, error) {
 	return string(password), nil
 }
 
-// generateRandomPassword creates a random password with specified length
 func generateRandomPassword(length int) (string, error) {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?"
 	password := make([]byte, length)
@@ -36,9 +38,8 @@ func generateRandomPassword(length int) (string, error) {
 	return string(password), nil
 }
 
-// promptForChoice asks user to choose between entering password or generating random one
 func promptForChoice() (bool, error) {
-	fmt.Print("Do you want to (e)nter a password or (g)enerate a random one? [e/g]: ")
+	fmt.Print("Do you want to (p)rovide a password or (g)enerate a random one? [p/g]: ")
 
 	var choice string
 	_, err := fmt.Scanln(&choice)
@@ -48,78 +49,91 @@ func promptForChoice() (bool, error) {
 
 	choice = strings.ToLower(strings.TrimSpace(choice))
 	switch choice {
-	case "e", "enter":
-		return false, nil // false means enter password
+	case "p", "provide":
+		return false, nil // false means provide password
 	case "g", "generate":
 		return true, nil // true means generate password
 	default:
-		return false, fmt.Errorf("invalid choice '%s', please enter 'e' for enter or 'g' for generate", choice)
+		return false, fmt.Errorf("invalid choice '%s', please enter 'p' for provide or 'g' for generate", choice)
+	}
+}
+
+func getFomEnv(password *string) {
+	if envPassword := os.Getenv(passwordEnv); envPassword != "" {
+		fmt.Printf("Using password from environment variable %s\n", passwordEnv)
+		*password = envPassword
 	}
 }
 
 func promptForEncryptPasswordIfEmpty(password *string, nonInteractive bool) error {
-	if *password == "" {
-		if nonInteractive {
-			// In non-interactive mode, always generate a random password
-			randomPassword, err := generateRandomPassword(16)
-			if err != nil {
-				return err
-			}
-			*password = randomPassword
-			fmt.Printf("Generated random password: %s\n", randomPassword)
-			return nil
-		}
+	if *password != "" {
+		return nil
+	}
 
-		// Interactive mode: ask user what they want to do
-		generateRandom, err := promptForChoice()
+	if getFomEnv(password); *password != "" {
+		return nil
+	}
+
+	// Ask user what they want to do - assume generation if non-interactive
+	var generateRandom bool
+	var err error
+	if nonInteractive {
+		generateRandom = true
+	} else {	
+		generateRandom, err = promptForChoice()
 		if err != nil {
 			return err
 		}
-
-		if generateRandom {
-			randomPassword, err := generateRandomPassword(16)
-			if err != nil {
-				return err
-			}
-			*password = randomPassword
-			fmt.Printf("Generated random password: %s\n", randomPassword)
-		} else {
-			// User wants to enter password manually
-			*password, err = promptForPassword("Enter password: ")
-			if err != nil {
-				return err
-			}
-
-			confirmPassword, err := promptForPassword("Confirm password: ")
-			if err != nil {
-				return err
-			}
-
-			if *password != confirmPassword {
-				return fmt.Errorf("passwords do not match")
-			}
-		}
 	}
-	return nil
-}
 
-// promptForDecryptPasswordIfEmpty handles password prompting for decryption (no generation option)
-func promptForDecryptPasswordIfEmpty(password *string, nonInteractive bool) error {
-	if *password == "" {
-		if nonInteractive {
-			return fmt.Errorf("password is required for decryption but non-interactive mode is enabled")
+	if generateRandom {
+		randomPassword, err := generateRandomPassword(generatedPasswordLength)
+		if err != nil {
+			return err
 		}
-
-		// For decryption, only prompt for password entry (no generation option)
-		var err error
+		*password = randomPassword
+		fmt.Printf("Generated random password: %s\n", randomPassword)
+	} else {
 		*password, err = promptForPassword("Enter password: ")
 		if err != nil {
 			return err
 		}
 
-		if *password == "" {
-			return fmt.Errorf("password cannot be empty")
+		confirmPassword, err := promptForPassword("Confirm password: ")
+		if err != nil {
+			return err
+		}
+
+		if *password != confirmPassword {
+			return fmt.Errorf("passwords do not match")
 		}
 	}
+
+	return nil
+}
+
+func promptForDecryptPasswordIfEmpty(password *string, nonInteractive bool) error {
+	if *password != "" {
+		return nil
+	}
+
+	if getFomEnv(password); *password != "" {
+		return nil
+	}
+
+	if nonInteractive {
+		return fmt.Errorf("password is not provided and non-interactive mode is enabled")
+	}
+
+	var err error
+	*password, err = promptForPassword("Enter password: ")
+	if err != nil {
+		return err
+	}
+
+	if *password == "" {
+		return fmt.Errorf("password cannot be empty")
+	}
+
 	return nil
 }
