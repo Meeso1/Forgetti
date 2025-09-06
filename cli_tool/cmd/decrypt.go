@@ -3,6 +3,7 @@ package cmd
 import (
 	"Forgetti/commands"
 	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +23,7 @@ func init() {
 	decryptCmd.Flags().BoolVarP(&decrypt_overwrite, "overwrite", "w", false, "Overwrite the output file if it already exists")
 	decryptCmd.Flags().BoolVarP(&decrypt_verbose, "verbose", "v", false, "Verbose output")
 	decryptCmd.Flags().BoolVarP(&decrypt_quiet, "quiet", "q", false, "Quiet output")
-	
+
 	rootCmd.AddCommand(decryptCmd)
 }
 
@@ -31,10 +32,15 @@ var decryptCmd = &cobra.Command{
 	Short: "Decrypt a file",
 	Long:  `Decrypt contents of a given file, writing the output to another specified file.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := promptForPasswordIfEmpty(&decrypt_password, "Enter password: "); err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		input, err := commands.CreateDecryptInput(
-			decrypt_inputPath, 
-			decrypt_outputPath, 
-			decrypt_password, 
+			decrypt_inputPath,
+			decrypt_outputPath,
+			decrypt_password,
 			decrypt_serverAddress,
 			decrypt_overwrite,
 			decrypt_verbose,

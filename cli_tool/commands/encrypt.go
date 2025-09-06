@@ -1,11 +1,11 @@
 package commands
 
 import (
+	"Forgetti/config"
 	"Forgetti/encryption"
 	"Forgetti/interaction"
 	"Forgetti/io"
 	"Forgetti/models"
-	"Forgetti/config"
 	"fmt"
 	"strconv"
 	"strings"

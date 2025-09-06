@@ -3,6 +3,7 @@ package cmd
 import (
 	"Forgetti/commands"
 	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -32,10 +33,15 @@ var encryptCmd = &cobra.Command{
 	Use:   "encrypt",
 	Short: "Encrypt a file",
 	Long:  `Encrypt contents of a given file, writing the output to another specified file.`,
-	Args: cobra.ExactArgs(0),
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := promptForPasswordIfEmpty(&encrypt_password, "Enter password: "); err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		input, err := commands.CreateEncryptInput(
-			encrypt_inputPath, 
+			encrypt_inputPath,
 			encrypt_outputPath,
 			encrypt_password,
 			encrypt_expiresIn,
