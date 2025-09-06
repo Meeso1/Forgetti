@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"fmt"
 	"Forgetti/io"
+	"fmt"
 )
 
 type ReadMetadataInput struct {
@@ -23,7 +23,7 @@ func ReadMetadata(input ReadMetadataInput) error {
 	logger := MakeLogger(LogLevelInfo)
 
 	logger.Info("File: '%s'", input.InputPath)
-	contentWithMetadata, err := io.ReadMetadataFromFile(input.InputPath)
+	contentWithMetadata, err := io.ReadContentWithMetadataFromFile(input.InputPath)
 	if err != nil {
 		return err
 	}

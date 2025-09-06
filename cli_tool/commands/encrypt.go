@@ -1,30 +1,30 @@
 package commands
 
 import (
-	"time"
-	"fmt"
-	"Forgetti/io"
 	"Forgetti/encryption"
 	"Forgetti/interaction"
+	"Forgetti/io"
 	"Forgetti/models"
+	"fmt"
+	"time"
 )
 
 type EncryptInput struct {
-	InputPath string
-	OutputPath string
-	Password string
-	Expiration time.Time
+	InputPath     string
+	OutputPath    string
+	Password      string
+	Expiration    time.Time
 	ServerAddress string
-	Overwrite bool
-	LogLevel LogLevel
+	Overwrite     bool
+	LogLevel      LogLevel
 }
 
 func CreateEncryptInput(
-	inputPath string, 
-	outputPath string, 
-	password string, 
-	expiresIn string, 
-	serverAddress string, 
+	inputPath string,
+	outputPath string,
+	password string,
+	expiresIn string,
+	serverAddress string,
 	overwrite bool,
 	verbose bool,
 	quiet bool,
@@ -36,7 +36,7 @@ func CreateEncryptInput(
 	if !io.FileExists(inputPath) {
 		return nil, fmt.Errorf("input file does not exist: '%s'", inputPath)
 	}
-	
+
 	if outputPath == "" {
 		outputPath = inputPath + ".forgetti"
 	}
@@ -44,7 +44,7 @@ func CreateEncryptInput(
 	if io.FileExists(outputPath) && !overwrite {
 		return nil, fmt.Errorf("output file already exists: '%s'", outputPath)
 	}
-	
+
 	expiration, err := parseExpiration(expiresIn)
 	if err != nil {
 		return nil, err
@@ -67,15 +67,15 @@ func CreateEncryptInput(
 	if quiet {
 		logLevel = LogLevelError
 	}
-	
+
 	return &EncryptInput{
-		InputPath: inputPath,
-		OutputPath: outputPath,
-		Password: password,
-		Expiration: expiration,
+		InputPath:     inputPath,
+		OutputPath:    outputPath,
+		Password:      password,
+		Expiration:    expiration,
 		ServerAddress: serverAddress,
-		Overwrite: overwrite,
-		LogLevel: logLevel,
+		Overwrite:     overwrite,
+		LogLevel:      logLevel,
 	}, nil
 }
 
@@ -117,18 +117,18 @@ func Encrypt(input EncryptInput) error {
 
 	contentWithMetadata := models.FileContentWithMetadata{
 		FileContent: encryptedContent,
-		Metadata: interactionResult.Metadata,
+		Metadata:    interactionResult.Metadata,
 	}
-	
-	logger.Verbose("Writing metadata to file '%s' (%d bytes, overwrite: %t)", input.OutputPath, len(encryptedContent), input.Overwrite)
-	if err := io.WriteMetadataToFile(input.OutputPath, input.Overwrite, &contentWithMetadata); err != nil {
+
+	logger.Verbose("Writing encnrypted content to file '%s' (%d bytes, overwrite: %t)", input.OutputPath, len(encryptedContent), input.Overwrite)
+	if err := io.WriteContentWithMetadataToFile(input.OutputPath, input.Overwrite, &contentWithMetadata); err != nil {
 		return err
 	}
-	
-	logger.Info("Output: '%s' (%d bytes)", input.OutputPath, len(encryptedContent))
-	logger.Info("Key ID: '%s'", interactionResult.Metadata.KeyId)
-	logger.Info("Expires at: '%s' (in %s)", interactionResult.Metadata.Expiration.String(), time.Until(interactionResult.Metadata.Expiration).String())
-	logger.Info("Server Address: '%s'", interactionResult.Metadata.ServerAddress)
+
+	logger.Info("Output:         %s (%d bytes)", input.OutputPath, len(encryptedContent))
+	logger.Info("Key ID:         %s", interactionResult.Metadata.KeyId)
+	logger.Info("Expires at:     %s (in %s)", interactionResult.Metadata.Expiration.String(), time.Until(interactionResult.Metadata.Expiration).String())
+	logger.Info("Server Address: %s", interactionResult.Metadata.ServerAddress)
 
 	return nil
 }

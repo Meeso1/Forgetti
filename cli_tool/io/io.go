@@ -1,11 +1,11 @@
 package io
 
 import (
+	"Forgetti/models"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
-	"Forgetti/models"
-	"fmt"
-	"encoding/json"
 )
 
 func FileExists(path string) bool {
@@ -31,7 +31,7 @@ func WriteFile(path string, overwrite bool, data []byte) error {
 }
 
 // TODO: Using just JSON is stupid - write metadata and then raw bytes
-func WriteMetadataToFile(path string, overwrite bool, data *models.FileContentWithMetadata) error {
+func WriteContentWithMetadataToFile(path string, overwrite bool, data *models.FileContentWithMetadata) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
@@ -40,7 +40,7 @@ func WriteMetadataToFile(path string, overwrite bool, data *models.FileContentWi
 	return WriteFile(path, overwrite, jsonData)
 }
 
-func ReadMetadataFromFile(path string) (*models.FileContentWithMetadata, error) {
+func ReadContentWithMetadataFromFile(path string) (*models.FileContentWithMetadata, error) {
 	jsonData, err := ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)

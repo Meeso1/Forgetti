@@ -1,28 +1,28 @@
 package commands
 
 import (
-	"fmt"
-	"Forgetti/io"
 	"Forgetti/encryption"
 	"Forgetti/interaction"
+	"Forgetti/io"
+	"fmt"
 	"strings"
 	"time"
 )
 
 type DecryptInput struct {
-	InputPath string
-	OutputPath string
-	Password string
+	InputPath     string
+	OutputPath    string
+	Password      string
 	ServerAddress string
-	Overwrite bool
-	LogLevel LogLevel
+	Overwrite     bool
+	LogLevel      LogLevel
 }
 
 func CreateDecryptInput(
-	inputPath string, 
-	outputPath string, 
-	password string, 
-	serverAddress string, 
+	inputPath string,
+	outputPath string,
+	password string,
+	serverAddress string,
 	overwrite bool,
 	verbose bool,
 	quiet bool,
@@ -34,7 +34,7 @@ func CreateDecryptInput(
 	if !io.FileExists(inputPath) {
 		return nil, fmt.Errorf("input file does not exist: '%s'", inputPath)
 	}
-	
+
 	if outputPath == "" {
 		if strings.HasSuffix(inputPath, ".forgetti") {
 			outputPath = strings.TrimSuffix(inputPath, ".forgetti")
@@ -60,12 +60,12 @@ func CreateDecryptInput(
 	}
 
 	return &DecryptInput{
-		InputPath: inputPath,
-		OutputPath: outputPath,
-		Password: password,
+		InputPath:     inputPath,
+		OutputPath:    outputPath,
+		Password:      password,
 		ServerAddress: serverAddress,
-		Overwrite: overwrite,
-		LogLevel: logLevel,
+		Overwrite:     overwrite,
+		LogLevel:      logLevel,
 	}, nil
 }
 
@@ -74,11 +74,11 @@ func Decrypt(input DecryptInput) error {
 	logger := MakeLogger(input.LogLevel)
 
 	logger.Verbose("Reading file '%s'", input.InputPath)
-	contentWithMetadata, err := io.ReadMetadataFromFile(input.InputPath)
+	contentWithMetadata, err := io.ReadContentWithMetadataFromFile(input.InputPath)
 	if err != nil {
 		return err
 	}
-	logger.Verbose("Read metadata from file")
+	logger.Verbose("Read encrypted content from file")
 	logger.Info("%s", contentWithMetadata.String())
 
 	if contentWithMetadata.Metadata.Expiration.Before(time.Now()) {
