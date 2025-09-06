@@ -5,6 +5,7 @@ import (
 	"Forgetti/interaction"
 	"Forgetti/io"
 	"Forgetti/models"
+	"Forgetti/config"
 	"fmt"
 	"strconv"
 	"strings"
@@ -31,6 +32,17 @@ func CreateEncryptInput(
 	verbose bool,
 	quiet bool,
 ) (*EncryptInput, error) {
+	if config.DoesConfigExist() {
+		config, err := config.LoadConfig()
+		if err != nil {
+			return nil, err
+		}
+
+		if serverAddress == "" {
+			serverAddress = config.ServerAddress
+		}
+	}
+
 	if inputPath == "" {
 		return nil, fmt.Errorf("input path is required")
 	}
@@ -58,7 +70,6 @@ func CreateEncryptInput(
 	}
 
 	if serverAddress == "" {
-		// TODO: Get default from config and env
 		return nil, fmt.Errorf("server address is required")
 	}
 
