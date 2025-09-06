@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"errors"
+	"fmt"
 	"math/big"
 	"strconv"
 )
@@ -22,10 +23,10 @@ func GenerateKeyPair() (*KeyPair, error) {
 		return nil, err
 	}
 
-	return MakeKeyPairFromRsaKey(keyPair)
+	return makeKeyPairFromRsaKey(keyPair)
 }
 
-func MakeKeyPairFromRsaKey(rsaKey *rsa.PrivateKey) (*KeyPair, error) {
+func makeKeyPairFromRsaKey(rsaKey *rsa.PrivateKey) (*KeyPair, error) {
 	primes := rsaKey.Primes
 	n := rsaKey.N
 
@@ -57,7 +58,7 @@ func getEAndD(n *big.Int, lambdaN *big.Int) (*big.Int, *big.Int, error) {
 		}
 
 		d := new(big.Int).ModInverse(e, lambdaN)
-		if d != nil {
+		if d != nil && d.Cmp(big.NewInt(minExponent)) > 0 {
 			return e, d, nil
 		}
 	}
@@ -91,4 +92,66 @@ func lambda(primes []*big.Int) *big.Int {
 
 func lcm(a, b *big.Int) *big.Int {
 	return new(big.Int).Div(new(big.Int).Mul(a, b), new(big.Int).GCD(nil, nil, a, b))
+}
+
+func ValidatePublicKey(publicKey *PublicKey) error {
+	return validateKey(publicKey.N, publicKey.E)
+}
+
+func ValidatePrivateKey(privateKey *PrivateKey) error {
+	return validateKey(privateKey.N, privateKey.D)
+}
+
+func validateKey(n *big.Int, exponent *big.Int) error {
+	nErr := validateN(n)
+	exponentErr := validateExponent(exponent)
+	
+	result := ""
+	if nErr != nil {
+		result += nErr.Error()
+	}
+	if exponentErr != nil {
+		if result != "" {
+			result += "; "
+		}
+		result += exponentErr.Error()
+	}
+
+	if result != "" {
+		return errors.New(result)
+	}
+
+	return nil
+}
+
+func validateExponent(exponent *big.Int) error {
+	if exponent == nil {
+		return errors.New("exponent is nil")
+	}
+	
+	if exponent.Sign() <= 0 {
+		return errors.New("exponent is not positive")
+	}
+
+	if exponent.Cmp(big.NewInt(minExponent)) < 0 {
+		return fmt.Errorf("exponent is too small: %s (exponent) < %d (min exponent)", exponent.String(), minExponent)
+	}
+
+	return nil
+}
+
+func validateN(n *big.Int) error {
+	if n == nil {
+		return errors.New("'N' is nil")
+	}
+
+	if n.Sign() <= 0 {
+		return errors.New("'N' is not positive")
+	}
+
+	if n.BitLen() < keySize {
+		return fmt.Errorf("'N' is too small: %d bits (N) < %d bits (key size)", n.BitLen(), keySize)
+	}
+
+	return nil
 }

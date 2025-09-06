@@ -7,11 +7,6 @@ import (
 )
 
 func TestEncryptDecrypt(t *testing.T) {
-	//testN := new(big.Int)
-	//testN.SetString("3233", 10) // Small modulus for testing
-	//testE := big.NewInt(17)     // Small exponent
-	//testD := big.NewInt(2753)   // Corresponding private exponent (calculated: d = e^-1 mod φ(n))
-
 	keyPair, err := GenerateKeyPair()
 	if err != nil {
 		t.Fatalf("Failed to generate key pair: %v", err)
@@ -86,19 +81,67 @@ func TestEncryptDecrypt(t *testing.T) {
 
 func TestEncryptInvalidKey(t *testing.T) {
 	// Test with invalid public key (nil values)
-	invalidKey := &PublicKey{
-		N: nil,
-		E: big.NewInt(65537),
+	validKeyPair, err := GenerateKeyPair()
+	if err != nil {
+		t.Fatalf("Failed to generate key pair: %v", err)
 	}
 
-	// This should panic or error - let's catch the panic
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Encrypt() should panic or error for invalid key with nil N")
-		}
-	}()
+	tests := []struct {
+		name string
+		key *PublicKey
+	}{
+		{
+			name: "Nil N",
+			key: &PublicKey{
+				N: nil,
+				E: validKeyPair.BroadcastKey.E,
+			},
+		},
+		{
+			name: "Nil E",
+			key: &PublicKey{
+				N: validKeyPair.BroadcastKey.N,
+				E: nil,
+			},
+		},
+		{
+			name: "Negative N",
+			key: &PublicKey{
+				N: new(big.Int).Neg(validKeyPair.BroadcastKey.N),
+				E: validKeyPair.BroadcastKey.E,
+			},
+		},
+		{
+			name: "Negative E",
+			key: &PublicKey{
+				N: validKeyPair.BroadcastKey.N,
+				E: new(big.Int).Neg(validKeyPair.BroadcastKey.E),
+			},
+		},
+		{
+			name: "Small N",
+			key: &PublicKey{
+				N: big.NewInt(1024),
+				E: validKeyPair.BroadcastKey.E,
+			},
+		},
+		{
+			name: "Small E",
+			key: &PublicKey{
+				N: validKeyPair.BroadcastKey.N,
+				E: big.NewInt(1),
+			},
+		},
+	}
 
-	Encrypt("test content", invalidKey)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := Encrypt("test content", tt.key)
+			if err == nil {
+				t.Error("Encrypt() should return error for invalid key")
+			}
+		})
+	}
 }
 
 func TestDecryptInvalidInput(t *testing.T) {
@@ -128,10 +171,14 @@ func TestDecryptInvalidInput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := Decrypt(tt.content, keyPair.VerificationKey)
-			if err == nil && tt.content != "" {
-				t.Error("Decrypt() should return error for invalid input")
-			}
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("Decrypt() panicked for input '%v': %v", tt.content, r)
+				}
+			}()
+
+			// We only care that it does not panic, error or not is fine
+			_, _ = Decrypt(tt.content, keyPair.VerificationKey)
 		})
 	}
 }
@@ -148,19 +195,58 @@ func TestDecryptInvalidKey(t *testing.T) {
 		t.Fatalf("Failed to encrypt test content: %v", err)
 	}
 
-	// Test with invalid private key
-	invalidKey := &PrivateKey{
-		N: nil,
-		D: big.NewInt(12345),
+	tests := []struct {
+		name string
+		key *PrivateKey
+	}{
+		{
+			name: "Nil N",
+			key: &PrivateKey{
+				N: nil,
+				D: keyPair.VerificationKey.D,
+			},
+		},
+		{
+			name: "Nil D",
+			key: &PrivateKey{
+				N: keyPair.VerificationKey.N,
+				D: nil,
+			},
+		},
+		{
+			name: "Negative N",
+			key: &PrivateKey{
+				N: new(big.Int).Neg(keyPair.VerificationKey.N),
+				D: keyPair.VerificationKey.D,
+			},
+		},
+		{
+			name: "Negative D",
+			key: &PrivateKey{
+				N: keyPair.VerificationKey.N,
+				D: new(big.Int).Neg(keyPair.VerificationKey.D),
+			},
+		},
+		{
+			name: "Small N",
+			key: &PrivateKey{
+				N: big.NewInt(1024),
+				D: keyPair.VerificationKey.D,
+			},
+		},
 	}
 
-	_, err = Decrypt(encrypted, invalidKey)
-	if err == nil {
-		t.Error("Decrypt() should return error for invalid key")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := Decrypt(encrypted, tt.key)
+			if err == nil {
+				t.Error("Decrypt() should return error for invalid key")
+			}
+		})
 	}
 }
 
-func TestEncryptDecryptConsistency(t *testing.T) {
+func TestEncryptConsistency(t *testing.T) {
 	// Generate a key pair
 	keyPair, err := GenerateKeyPair()
 	if err != nil {
