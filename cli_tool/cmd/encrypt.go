@@ -13,6 +13,8 @@ func init() {
 	encryptCmd.Flags().StringVarP(&encrypt_inputPath, "input-path", "i", "", "The path to the input file")
 	encryptCmd.Flags().StringVarP(&encrypt_outputPath, "output-path", "o", "", "The path to the output file")
 	encryptCmd.Flags().BoolVarP(&encrypt_overwrite, "overwrite", "w", false, "Overwrite the output file if it already exists")
+	encryptCmd.Flags().BoolVarP(&encrypt_verbose, "verbose", "v", false, "Verbose output")
+	encryptCmd.Flags().BoolVarP(&encrypt_quiet, "quiet", "q", false, "Quiet output")
 
 	rootCmd.AddCommand(encryptCmd)
 }
@@ -23,6 +25,8 @@ var encrypt_serverAddress string
 var encrypt_inputPath string
 var encrypt_outputPath string
 var encrypt_overwrite bool
+var encrypt_verbose bool
+var encrypt_quiet bool
 
 var encryptCmd = &cobra.Command{
 	Use:   "encrypt",
@@ -37,6 +41,8 @@ var encryptCmd = &cobra.Command{
 			encrypt_expiresIn,
 			encrypt_serverAddress,
 			encrypt_overwrite,
+			encrypt_verbose,
+			encrypt_quiet,
 		)
 		if err != nil {
 			fmt.Println(err)

@@ -6,6 +6,7 @@ import (
 	"Forgetti/encryption"
 	"Forgetti/interaction"
 	"strings"
+	"time"
 )
 
 type DecryptInput struct {
@@ -14,6 +15,7 @@ type DecryptInput struct {
 	Password string
 	ServerAddress string
 	Overwrite bool
+	LogLevel LogLevel
 }
 
 func CreateDecryptInput(
@@ -22,6 +24,8 @@ func CreateDecryptInput(
 	password string, 
 	serverAddress string, 
 	overwrite bool,
+	verbose bool,
+	quiet bool,
 ) (*DecryptInput, error) {
 	if inputPath == "" {
 		return nil, fmt.Errorf("input path is required")
@@ -47,45 +51,76 @@ func CreateDecryptInput(
 		return nil, fmt.Errorf("password is required")
 	}
 
+	logLevel := LogLevelInfo
+	if verbose {
+		logLevel = LogLevelVerbose
+	}
+	if quiet {
+		logLevel = LogLevelError
+	}
+
 	return &DecryptInput{
 		InputPath: inputPath,
 		OutputPath: outputPath,
 		Password: password,
 		ServerAddress: serverAddress,
 		Overwrite: overwrite,
+		LogLevel: logLevel,
 	}, nil
 }
 
-// TODO: Print stuff + handle HTTP errors in a pretty way
+// TODO: Handle HTTP errors in a pretty way
 func Decrypt(input DecryptInput) error {
+	logger := MakeLogger(input.LogLevel)
+
+	logger.Verbose("Reading file '%s'", input.InputPath)
 	contentWithMetadata, err := io.ReadMetadataFromFile(input.InputPath)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Read metadata from file")
+	logger.Info("Encrypted content length: %d", len(contentWithMetadata.FileContent))
+	logger.Info("Key ID: %s", contentWithMetadata.Metadata.KeyId)
+	logger.Info("Expires at: %s (in %s)", contentWithMetadata.Metadata.Expiration.String(), time.Until(contentWithMetadata.Metadata.Expiration).String())
+	logger.Info("Server Address: %s", contentWithMetadata.Metadata.ServerAddress)
+
+	if contentWithMetadata.Metadata.Expiration.Before(time.Now()) {
+		return fmt.Errorf("key has expired at %s (%s ago)", contentWithMetadata.Metadata.Expiration.String(), time.Since(contentWithMetadata.Metadata.Expiration).String())
+	}
 
 	serverAddress := input.ServerAddress
 	if serverAddress == "" {
+		logger.Verbose("Server address not provided, using server address from metadata: '%s'", contentWithMetadata.Metadata.ServerAddress)
 		serverAddress = contentWithMetadata.Metadata.ServerAddress
 	}
 
+	logger.Verbose("Getting remote key '%s', using server '%s'", contentWithMetadata.Metadata.KeyId, serverAddress)
 	encryptedKeyHash, err := interaction.EncryptWithExistingKey(serverAddress, input.Password, &contentWithMetadata.Metadata)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Got remote key '%s'", contentWithMetadata.Metadata.KeyId)
 
+	logger.Verbose("Creating symmetric key")
 	key, err := encryption.CreateKey(input.Password, encryptedKeyHash)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Created symmetric key")
 
+	logger.Verbose("Decrypting content")
 	decryptedContent, err := encryption.Decrypt(contentWithMetadata.FileContent, key)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Decrypted content")
 
+	logger.Verbose("Writing content to file '%s' (%d bytes, overwrite: %t)", input.OutputPath, len(decryptedContent), input.Overwrite)
 	if err := io.WriteFile(input.OutputPath, input.Overwrite, decryptedContent); err != nil {
 		return err
 	}
+
+	logger.Info("Output: '%s' (%d bytes)", input.OutputPath, len(decryptedContent))
 
 	return nil
 }

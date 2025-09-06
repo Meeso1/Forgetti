@@ -16,6 +16,7 @@ type EncryptInput struct {
 	Expiration time.Time
 	ServerAddress string
 	Overwrite bool
+	LogLevel LogLevel
 }
 
 func CreateEncryptInput(
@@ -25,6 +26,8 @@ func CreateEncryptInput(
 	expiresIn string, 
 	serverAddress string, 
 	overwrite bool,
+	verbose bool,
+	quiet bool,
 ) (*EncryptInput, error) {
 	if inputPath == "" {
 		return nil, fmt.Errorf("input path is required")
@@ -56,6 +59,14 @@ func CreateEncryptInput(
 		// TODO: Get default from config and env
 		return nil, fmt.Errorf("server address is required")
 	}
+
+	logLevel := LogLevelInfo
+	if verbose {
+		logLevel = LogLevelVerbose
+	}
+	if quiet {
+		logLevel = LogLevelError
+	}
 	
 	return &EncryptInput{
 		InputPath: inputPath,
@@ -64,6 +75,7 @@ func CreateEncryptInput(
 		Expiration: expiration,
 		ServerAddress: serverAddress,
 		Overwrite: overwrite,
+		LogLevel: logLevel,
 	}, nil
 }
 
@@ -72,36 +84,51 @@ func parseExpiration(expiresIn string) (time.Time, error) {
 	return time.Now().Add(time.Duration(1) * time.Hour), nil
 }
 
-// TODO: Print something sometimes
 func Encrypt(input EncryptInput) error {
+	logger := MakeLogger(input.LogLevel)
+
+	logger.Verbose("Reading input file '%s'", input.InputPath)
 	content, err := io.ReadFile(input.InputPath)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Read %d bytes from input file", len(content))
 
+	logger.Verbose("Creating remote key, using server '%s' and expiration '%s'", input.ServerAddress, input.Expiration.String())
 	interactionResult, err := interaction.GenerateKeyAndEncrypt(input.ServerAddress, input.Password, input.Expiration)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Created remote key '%s' with expiration '%s'", interactionResult.Metadata.KeyId, interactionResult.Metadata.Expiration.String())
 
+	logger.Verbose("Creating symmetric key")
 	key, err := encryption.CreateKey(input.Password, interactionResult.EncryptedKeyHash)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Created symmetric key")
 
+	logger.Verbose("Encrypting content")
 	encryptedContent, err := encryption.Encrypt(content, key)
 	if err != nil {
 		return err
 	}
+	logger.Verbose("Encrypted content")
 
 	contentWithMetadata := models.FileContentWithMetadata{
 		FileContent: encryptedContent,
 		Metadata: interactionResult.Metadata,
 	}
 	
+	logger.Verbose("Writing metadata to file '%s' (%d bytes, overwrite: %t)", input.OutputPath, len(encryptedContent), input.Overwrite)
 	if err := io.WriteMetadataToFile(input.OutputPath, input.Overwrite, &contentWithMetadata); err != nil {
 		return err
 	}
+	
+	logger.Info("Output: '%s' (%d bytes)", input.OutputPath, len(encryptedContent))
+	logger.Info("Key ID: '%s'", interactionResult.Metadata.KeyId)
+	logger.Info("Expires at: '%s' (in %s)", interactionResult.Metadata.Expiration.String(), time.Until(interactionResult.Metadata.Expiration).String())
+	logger.Info("Server Address: '%s'", interactionResult.Metadata.ServerAddress)
 
 	return nil
 }
