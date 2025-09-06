@@ -45,10 +45,15 @@ func escapeSingleByte(bytes []byte, byteToEscape byte) []byte {
 		}
 		result = append(result, b)
 	}
+
 	return result
 }
 
 func UnescapeBytes(bytes []byte) []byte {
+	if len(bytes) == 0 {
+		return bytes
+	}
+
 	// Count escape bytes, except when the escape byte is escaped (they would be counted twice)
 	count := 0
 	for i, b := range bytes[:len(bytes)-1] {
@@ -58,17 +63,21 @@ func UnescapeBytes(bytes []byte) []byte {
 	}
 
 	result := make([]byte, 0, len(bytes) - count)
+	seenEscapeByte := false
 	for i, b := range bytes {
-		// Skip escape bytes
-		if b == EscapeByte {
-			// Except if the next byte is also an escape byte
-			// The last byte should never be a single escape byte, but if it is, we just keep it
-			if i == len(bytes) - 1 || bytes[i+1] == EscapeByte {
+		// If we see an escape byte, we skip it and keep track of it
+		if b == EscapeByte && !seenEscapeByte {
+			// Unless it's the last byte - then we keep it
+			// This should never happen if the input was escaped correctly
+			if i == len(bytes) - 1 {
 				result = append(result, EscapeByte)
 			}
+
+			seenEscapeByte = true
 			continue
 		}
-
+		
+		seenEscapeByte = false
 		result = append(result, b)
 	}
 	
