@@ -1,13 +1,13 @@
 package models
 
 import (
-	"crypto/rsa"
+	"forgetti-common/crypto"
 	"time"
 )
 
 type NewKeyEncryptionResult struct {
 	KeyId string
 	Expiration time.Time
-	VerificationKey *rsa.PrivateKey
+	VerificationKey *crypto.PrivateKey
 	EncryptedContent string
 }

@@ -1,13 +1,13 @@
 package models
 
 import (
-	"crypto/rsa"
 	"time"
+	"forgetti-common/crypto"
 	"github.com/google/uuid"
 )
 
 type BoradcastKey struct {
 	KeyId uuid.UUID
 	Expiration time.Time
-	Key *rsa.PublicKey
+	Key *crypto.PublicKey
 }
