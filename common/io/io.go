@@ -27,3 +27,17 @@ func WriteFile(path string, overwrite bool, data []byte) error {
 
 	return os.WriteFile(path, data, 0644)
 }
+
+func GetRelativePathFromBin(path string) (string, error) {
+	if filepath.IsAbs(path) {
+		return path, nil
+	}
+
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+	
+	binDir := filepath.Dir(execPath)
+	return filepath.Join(binDir, path), nil
+}

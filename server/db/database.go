@@ -4,26 +4,30 @@ import (
 	"ForgettiServer/config"
 	"ForgettiServer/db/models"
 	"fmt"
+	"forgetti-common/io"
 	"reflect"
 	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	_ "modernc.org/sqlite" // Pure Go SQLite driver
+	_ "modernc.org/sqlite"
 )
 
 type DatabaseService struct {
 	db *gorm.DB
 }
 
-// TODO: Change path to be relative to the binary (extract to common/io)
 // TODO: Add method for encryption at rest (separate service, use encryption key from config)
 func CreateDb(cfg *config.Config) (*gorm.DB, error) {
-	// Use the pure Go SQLite driver by specifying the driver name explicitly
+	path, err := io.GetRelativePathFromBin(cfg.Database.Path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get relative path from bin: %w", err)
+	}
+
 	db, err := gorm.Open(sqlite.Dialector{
 		DriverName: "sqlite",
-		DSN:        cfg.Database.Path,
+		DSN:        path,
 	}, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})

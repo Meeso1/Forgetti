@@ -55,12 +55,17 @@ func Load() (*Config, error) {
 }
 
 func LoadFromFile(filename string) (*Config, error) {
-	if !io.FileExists(filename) {
+	path, err := io.GetRelativePathFromBin(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get relative path from bin: %w", err)
+	}
+
+	if !io.FileExists(path) {
 		return Load()
 	}
 
 	var cfg Config
-	if err := cleanenv.ReadConfig(filename, &cfg); err != nil {
+	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to load config from file %s: %w", filename, err)
 	}
 

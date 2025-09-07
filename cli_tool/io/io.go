@@ -21,6 +21,10 @@ func WriteFile(path string, overwrite bool, data []byte) error {
 	return io.WriteFile(path, overwrite, data)
 }
 
+func GetRelativePathFromBin(path string) (string, error) {
+	return io.GetRelativePathFromBin(path)
+}
+
 func WriteContentWithMetadataToFile(path string, overwrite bool, data *models.FileContentWithMetadata) error {
 	// Marshal only the metadata to JSON
 	metadataJson, err := json.Marshal(data.Metadata)
