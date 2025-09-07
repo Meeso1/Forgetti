@@ -23,7 +23,10 @@ func main() {
 
 	r := gin.Default()
 
-	serviceContainer := services.CreateServiceContainer(cfg)
+	serviceContainer, err := services.CreateServiceContainer(cfg)
+	if err != nil {
+		log.Fatalf("Failed to create service container: %v", err)
+	}
 	routes.AddEncRoutes(r, serviceContainer)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)

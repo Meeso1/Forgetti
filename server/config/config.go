@@ -19,6 +19,13 @@ type Config struct {
 		RecentlyExpiredDurationHours int `json:"recently_expired_duration" env:"KEYSTORE_RECENTLY_EXPIRED_DURATION" env-default:"24" validate:"min=1,max=168"`
 	} `json:"keystore"`
 
+	Database struct {
+		Path            string `json:"path" env:"DB_PATH" env-default:"./forgetti.db" validate:"required"`
+		MaxOpenConns    int    `json:"max_open_conns" env:"DB_MAX_OPEN_CONNS" env-default:"25" validate:"min=1,max=100"`
+		MaxIdleConns    int    `json:"max_idle_conns" env:"DB_MAX_IDLE_CONNS" env-default:"5" validate:"min=1,max=25"`
+		ConnMaxLifetime int    `json:"conn_max_lifetime_minutes" env:"DB_CONN_MAX_LIFETIME" env-default:"60" validate:"min=1,max=1440"`
+	} `json:"database"`
+
 	Logging struct {
 		Level  string `json:"level" env:"LOG_LEVEL" env-default:"info" validate:"oneof=debug info warn error"`
 		Format string `json:"format" env:"LOG_FORMAT" env-default:"json" validate:"oneof=json text"`

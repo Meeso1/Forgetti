@@ -2,9 +2,12 @@ package services
 
 import (
 	"ForgettiServer/config"
+	"ForgettiServer/db/repositories"
+	dbModels "ForgettiServer/db/models"
 	"ForgettiServer/errors"
 	"ForgettiServer/models"
 	"fmt"
+	"forgetti-common/crypto"
 	"time"
 )
 
@@ -13,59 +16,97 @@ type KeyStore interface {
 	GetKey(keyId string) (*models.BoradcastKey, error)
 }
 
-// TODO: Store keys in a database
 type KeyStoreImpl struct {
-	keys                    map[string]models.BoradcastKey
-	recentlyExpired         map[string]time.Time
+	keyRepo                 *repositories.KeyRepo
+	recentlyExpiredRepo     *repositories.RecentlyExpiredRepo
 	recentlyExpiredDuration time.Duration
 }
 
-func CreateKeyStore(cfg *config.Config) KeyStore {
+func NewKeyStore(
+	keyRepo *repositories.KeyRepo,
+	recentlyExpiredRepo *repositories.RecentlyExpiredRepo,
+	cfg *config.Config,
+) KeyStore {
 	return &KeyStoreImpl{
-		keys:                    make(map[string]models.BoradcastKey),
-		recentlyExpired:         make(map[string]time.Time),
+		keyRepo:                 keyRepo,
+		recentlyExpiredRepo:     recentlyExpiredRepo,
 		recentlyExpiredDuration: time.Duration(cfg.KeyStore.RecentlyExpiredDurationHours) * time.Hour,
 	}
 }
 
 func (k *KeyStoreImpl) StoreKey(key models.BoradcastKey) error {
-	if _, ok := k.keys[key.KeyId.String()]; ok {
-		return fmt.Errorf("key with id %s already exists", key.KeyId.String())
+	serializedKey, err := crypto.SerializePublicKey(key.Key)
+	if err != nil {
+		return fmt.Errorf("failed to serialize key: %w", err)
 	}
 
-	k.keys[key.KeyId.String()] = key
-	return nil
+	return k.keyRepo.Create(key.KeyId.String(), key.Expiration, serializedKey)
 }
 
 func (k *KeyStoreImpl) GetKey(keyId string) (*models.BoradcastKey, error) {
-	key, ok := k.keys[keyId]
-	if !ok {
-		if expiration, ok := k.recentlyExpired[keyId]; ok {
-			// Cleanup from recently expired
-			if expiration.Before(time.Now().Add(-k.recentlyExpiredDuration)) {
-				delete(k.recentlyExpired, keyId)
-				return nil, errors.KeyNotFoundError(keyId)
-			}
-
-			return nil, errors.KeyExpiredError(keyId, expiration)
-		}
-
-		return nil, errors.KeyNotFoundError(keyId)
+	record, err := k.keyRepo.GetById(keyId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get key from database: %w", err)
 	}
 
-	// Expiration check
-	if key.Expiration.Before(time.Now()) {
-		// If key expired more than the configured duration ago, remove and return not found
-		if key.Expiration.Before(time.Now().Add(-k.recentlyExpiredDuration)) {
-			delete(k.keys, keyId)
-			return nil, errors.KeyNotFoundError(keyId)
+	if record != nil {
+		record, err = k.checkExpiration(record)
+		if err != nil {
+			return nil, err
 		}
 
-		k.recentlyExpired[keyId] = key.Expiration
-		delete(k.keys, keyId)
+		result, err := models.FromDbModel(record)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert database model to broadcast key: %w", err)
+		}
 
-		return nil, errors.KeyExpiredError(keyId, key.Expiration)
+		return result, nil
 	}
 
-	return &key, nil
+	// Check recently expired
+	expiredRecord, err := k.recentlyExpiredRepo.GetById(keyId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recently expired record: %w", err)
+	}
+	if expiredRecord != nil {
+		return nil, errors.KeyExpiredError(keyId, expiredRecord.Expiration)
+	}
+	return nil, errors.KeyNotFoundError(keyId)
+}
+
+func (k *KeyStoreImpl) checkExpiration(record *dbModels.KeyRecord) (*dbModels.KeyRecord, error) {
+	if !record.Expiration.Before(time.Now()) {
+		return record, nil
+	}
+
+	// Expired too long ago, treat as not found
+	if record.Expiration.Before(time.Now().Add(-k.recentlyExpiredDuration)) {
+		if err := k.keyRepo.Delete(record.Id); err != nil {
+			return nil, fmt.Errorf("failed to delete expired key: %w", err)
+		}
+		return nil, errors.KeyNotFoundError(record.Id)
+	}
+
+	// Move to recently expired
+	if err := k.recentlyExpiredRepo.Create(record.Id, record.Expiration); err != nil {
+		return nil, fmt.Errorf("failed to create recently expired record: %w", err)
+	}
+	if err := k.keyRepo.Delete(record.Id); err != nil {
+		return nil, fmt.Errorf("failed to delete expired key: %w", err)
+	}
+
+	return nil, errors.KeyExpiredError(record.Id, record.Expiration)
+}
+
+func (k *KeyStoreImpl) CleanupExpiredKeys() error {
+	cutoffTime := time.Now().Add(-k.recentlyExpiredDuration)
+	if err := k.recentlyExpiredRepo.DeleteBefore(cutoffTime); err != nil {
+		return fmt.Errorf("failed to cleanup recently expired records: %w", err)
+	}
+
+	if err := k.keyRepo.DeleteExpiredBefore(cutoffTime); err != nil {
+		return fmt.Errorf("failed to cleanup old expired keys: %w", err)
+	}
+
+	return nil
 }
