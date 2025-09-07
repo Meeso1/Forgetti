@@ -10,14 +10,21 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	_ "modernc.org/sqlite" // Pure Go SQLite driver
 )
 
 type DatabaseService struct {
 	db *gorm.DB
 }
 
+// TODO: Change path to be relative to the binary (extract to common/io)
+// TODO: Add method for encryption at rest (separate service, use encryption key from config)
 func CreateDb(cfg *config.Config) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(cfg.Database.Path), &gorm.Config{
+	// Use the pure Go SQLite driver by specifying the driver name explicitly
+	db, err := gorm.Open(sqlite.Dialector{
+		DriverName: "sqlite",
+		DSN:        cfg.Database.Path,
+	}, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
