@@ -8,7 +8,7 @@
     "recently_expired_duration": 24
   },
   "database": {
-    "path": "./forgetti.db",
+    "path": "forgetti.db",
     "max_open_conns": 25,
     "max_idle_conns": 5,
     "conn_max_lifetime_minutes": 60
@@ -16,5 +16,8 @@
   "logging": {
     "level": "info",
     "format": "json"
+  },
+  "data_protection": {
+    "key": "CHANGE_ME"
   }
 }

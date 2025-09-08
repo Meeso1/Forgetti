@@ -13,6 +13,7 @@ type ServiceContainer struct {
 	RecentlyExpiredRepo *repositories.RecentlyExpiredRepo
 	Encryptor           Encryptor
 	KeyStore            KeyStore
+	DataProtection      DataProtection
 }
 
 func CreateServiceContainer(cfg *config.Config) (*ServiceContainer, error) {
@@ -24,16 +25,23 @@ func CreateServiceContainer(cfg *config.Config) (*ServiceContainer, error) {
 	databaseService := db.NewDatabaseService(database)
 	keyRepo := repositories.NewKeyRepo(database)
 	recentlyExpiredRepo := repositories.NewRecentlyExpiredRepo(database)
+	
+	dataProtection, err := NewDataProtection(cfg)
+	if err != nil {
+		return nil, err
+	}
 
-	keyStore := NewKeyStore(keyRepo, recentlyExpiredRepo, cfg)
+	keyStore := NewKeyStore(keyRepo, recentlyExpiredRepo, dataProtection, cfg)
 	encryptor := CreateEncryptor(keyStore)
+
 
 	return &ServiceContainer{
 		Config:              cfg,
 		DatabaseService:     databaseService,
 		KeyRepo:             keyRepo,
 		RecentlyExpiredRepo: recentlyExpiredRepo,
-		Encryptor:           encryptor,
+		DataProtection:      dataProtection,
 		KeyStore:            keyStore,
+		Encryptor:           encryptor,
 	}, nil
 }

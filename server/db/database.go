@@ -18,7 +18,6 @@ type DatabaseService struct {
 	db *gorm.DB
 }
 
-// TODO: Add method for encryption at rest (separate service, use encryption key from config)
 func CreateDb(cfg *config.Config) (*gorm.DB, error) {
 	path, err := io.GetRelativePathFromBin(cfg.Database.Path)
 	if err != nil {

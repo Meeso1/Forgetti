@@ -15,8 +15,13 @@ type BoradcastKey struct {
 	Key *crypto.PublicKey
 }
 
-func FromDbModel(model *models.KeyRecord) (*BoradcastKey, error) {
-	publicKey, err := crypto.DeserializePublicKey(model.SerializedKey)
+func FromDbModel(model *models.KeyRecord, unprotect func(string) (string, error)) (*BoradcastKey, error) {
+	serializedKey, err := unprotect(model.SerializedKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unprotect key: %w", err)
+	}
+
+	publicKey, err := crypto.DeserializePublicKey(serializedKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deserialize public key: %w", err)
 	}

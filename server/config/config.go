@@ -30,6 +30,10 @@ type Config struct {
 		Level  string `json:"level" env:"LOG_LEVEL" env-default:"info" validate:"oneof=debug info warn error"`
 		Format string `json:"format" env:"LOG_FORMAT" env-default:"json" validate:"oneof=json text"`
 	} `json:"logging"`
+
+	DataProtection struct {
+		KeyBase64 string `json:"key" env:"DATA_PROTECTION_KEY" env-default:"" validate:"required"`
+	} `json:"data_protection"`
 }
 
 func (c *Config) Validate() error {

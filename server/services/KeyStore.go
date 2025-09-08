@@ -19,17 +19,20 @@ type KeyStore interface {
 type KeyStoreImpl struct {
 	keyRepo                 *repositories.KeyRepo
 	recentlyExpiredRepo     *repositories.RecentlyExpiredRepo
+	dataProtection          DataProtection
 	recentlyExpiredDuration time.Duration
 }
 
 func NewKeyStore(
 	keyRepo *repositories.KeyRepo,
 	recentlyExpiredRepo *repositories.RecentlyExpiredRepo,
+	dataProtection DataProtection,
 	cfg *config.Config,
 ) KeyStore {
 	return &KeyStoreImpl{
 		keyRepo:                 keyRepo,
 		recentlyExpiredRepo:     recentlyExpiredRepo,
+		dataProtection:          dataProtection,
 		recentlyExpiredDuration: time.Duration(cfg.KeyStore.RecentlyExpiredDurationHours) * time.Hour,
 	}
 }
@@ -40,7 +43,12 @@ func (k *KeyStoreImpl) StoreKey(key models.BoradcastKey) error {
 		return fmt.Errorf("failed to serialize key: %w", err)
 	}
 
-	return k.keyRepo.Create(key.KeyId.String(), key.Expiration, serializedKey)
+	protectedKey, err := k.dataProtection.Protect(serializedKey)
+	if err != nil {
+		return fmt.Errorf("failed to protect key: %w", err)
+	}
+
+	return k.keyRepo.Create(key.KeyId.String(), key.Expiration, protectedKey)
 }
 
 func (k *KeyStoreImpl) GetKey(keyId string) (*models.BoradcastKey, error) {
@@ -55,7 +63,7 @@ func (k *KeyStoreImpl) GetKey(keyId string) (*models.BoradcastKey, error) {
 			return nil, err
 		}
 
-		result, err := models.FromDbModel(record)
+		result, err := models.FromDbModel(record, k.dataProtection.Unprotect)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert database model to broadcast key: %w", err)
 		}
