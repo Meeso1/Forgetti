@@ -4,7 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
+
+const version1Signature = "v1"
+const separator = ":"
 
 func SerializePublicKey(publicKey *PublicKey) (string, error) {
 	publicKeyBytes, err := json.Marshal(publicKey)
@@ -12,10 +16,15 @@ func SerializePublicKey(publicKey *PublicKey) (string, error) {
 		return "", err
 	}
 
-	return base64.StdEncoding.EncodeToString(publicKeyBytes), nil
+	return addVersionSignature(base64.StdEncoding.EncodeToString(publicKeyBytes)), nil
 }
 
 func DeserializePublicKey(serialized string) (*PublicKey, error) {
+	version, serialized := consumeVersionSignature(serialized)
+	if version != version1Signature {
+		return nil, fmt.Errorf("invalid public key: unsupported version signature '%s'", version)
+	}
+
 	publicKeyBytes, err := base64.StdEncoding.DecodeString(serialized)
 	if err != nil {
 		return nil, err
@@ -60,4 +69,17 @@ func DeserializePrivateKey(serialized string) (*PrivateKey, error) {
 	}
 
 	return &privateKey, nil
+}
+
+func addVersionSignature(serialized string) string {
+	return version1Signature + separator + serialized
+}
+
+func consumeVersionSignature(serialized string) (string, string) {
+	first, second, found := strings.Cut(serialized, separator)
+	if !found {
+		return "", first
+	}
+
+	return first, second
 }

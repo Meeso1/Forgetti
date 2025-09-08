@@ -145,7 +145,7 @@ func Encrypt(input EncryptInput) error {
 	logger.Verbose("Created remote key '%s' with expiration '%s'", interactionResult.Metadata.KeyId, interactionResult.Metadata.Expiration.String())
 
 	logger.Verbose("Creating symmetric key")
-	key, err := encryption.CreateKey(input.Password, interactionResult.EncryptedKeyHash)
+	key, err := encryption.CreateKey(input.Password, interactionResult.EncryptedKeyHash, models.CurrentAlgVersion())
 	if err != nil {
 		return err
 	}
@@ -173,6 +173,7 @@ func Encrypt(input EncryptInput) error {
 	logger.Info("Key ID:         %s", interactionResult.Metadata.KeyId)
 	logger.Info("Expires at:     %s (in %s)", interactionResult.Metadata.Expiration.String(), time.Until(interactionResult.Metadata.Expiration).String())
 	logger.Info("Server Address: %s", interactionResult.Metadata.ServerAddress)
+	logger.Info("Alg Version:    %s", interactionResult.Metadata.AlgVersion)
 
 	return nil
 }

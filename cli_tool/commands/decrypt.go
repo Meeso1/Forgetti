@@ -4,6 +4,7 @@ import (
 	"Forgetti/encryption"
 	"Forgetti/interaction"
 	"Forgetti/io"
+	"Forgetti/models"
 	"fmt"
 	"strings"
 	"time"
@@ -80,6 +81,8 @@ func Decrypt(input DecryptInput) error {
 	logger.Verbose("Read encrypted content from file")
 	logger.Info("\n%s", contentWithMetadata.String())
 
+	versions := models.ParseAlgVersion(contentWithMetadata.Metadata.AlgVersion)
+
 	if contentWithMetadata.Metadata.Expiration.Before(time.Now()) {
 		return fmt.Errorf("key has expired at %s (%s ago)", contentWithMetadata.Metadata.Expiration.String(), time.Since(contentWithMetadata.Metadata.Expiration).String())
 	}
@@ -98,7 +101,7 @@ func Decrypt(input DecryptInput) error {
 	logger.Verbose("Got remote key '%s'", contentWithMetadata.Metadata.KeyId)
 
 	logger.Verbose("Creating symmetric key")
-	key, err := encryption.CreateKey(input.Password, encryptedKeyHash)
+	key, err := encryption.CreateKey(input.Password, encryptedKeyHash, versions)
 	if err != nil {
 		return err
 	}

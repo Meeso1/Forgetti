@@ -16,7 +16,7 @@ type KeyGenerationResult struct {
 func GenerateKeyAndEncrypt(serverAddress string, key string, expiration time.Time) (*KeyGenerationResult, error) {
 	remoteClient := NewRemoteClient(serverAddress)
 
-	keyHash, err := encryption.HashRemotePartForEncryption(key)
+	keyHash, err := encryption.HashRemotePartForEncryption(key, models.CurrentAlgVersion().PreRemoteHash)
 	if err != nil {
 		return nil, err
 	}
@@ -32,19 +32,15 @@ func GenerateKeyAndEncrypt(serverAddress string, key string, expiration time.Tim
 
 	return &KeyGenerationResult{
 		EncryptedKeyHash: response.EncryptedContent,
-		Metadata: models.Metadata{
-			KeyId: response.Metadata.KeyId,
-			Expiration: response.Metadata.Expiration,
-			VerificationKey: response.Metadata.VerificationKey,
-			ServerAddress: serverAddress,
-		},
+		Metadata: models.ToFileMetadata(response.Metadata, serverAddress),
 	}, nil
 }
 
 func EncryptWithExistingKey(serverAddress string, key string, metadata *models.Metadata) (string, error) {
 	remoteClient := NewRemoteClient(serverAddress)
+	versions := models.ParseAlgVersion(metadata.AlgVersion)
 
-	keyHash, err := encryption.HashRemotePartForEncryption(key)
+	keyHash, err := encryption.HashRemotePartForEncryption(key, versions.PreRemoteHash)
 	if err != nil {
 		return "", err
 	}

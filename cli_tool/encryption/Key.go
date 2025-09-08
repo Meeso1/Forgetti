@@ -1,19 +1,22 @@
 package encryption
 
-import "fmt"
+import (
+	"fmt"
+	"Forgetti/models"
+)
 
 type Key struct {
 	LocalPart  []byte // 16 bytes
 	RemotePart []byte // 16 bytes
 }
 
-func CreateKey(localPart string, remotePart string) (*Key, error) {
-	localPartBytes, err := HashLocalPart(localPart)
+func CreateKey(localPart string, remotePart string, version models.AlgVersion) (*Key, error) {
+	localPartBytes, err := HashLocalPart(localPart, version.LocalHash)
 	if err != nil {
 		return nil, err
 	}
 
-	remotePartBytes, err := HashEncryptedRemotePart(remotePart)
+	remotePartBytes, err := HashEncryptedRemotePart(remotePart, version.PostRemoteHash)
 	if err != nil {
 		return nil, err
 	}

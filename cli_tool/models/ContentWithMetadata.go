@@ -11,6 +11,7 @@ type Metadata struct {
 	Expiration 		time.Time `json:"expiration"`
 	VerificationKey string 	  `json:"verification_key"`
 	ServerAddress   string 	  `json:"server_address"`
+	AlgVersion      string 	  `json:"alg_version"`
 }
 
 type FileContentWithMetadata struct {
@@ -18,12 +19,13 @@ type FileContentWithMetadata struct {
 	Metadata  Metadata `json:"metadata"`
 }
 
-func ToFileMetadata(metadata dto.Metadata, serverAddress string) *Metadata {
-	return &Metadata{
+func ToFileMetadata(metadata dto.Metadata, serverAddress string) Metadata {
+	return Metadata{
 		KeyId: metadata.KeyId,
 		Expiration: metadata.Expiration,
 		VerificationKey: metadata.VerificationKey,
 		ServerAddress: serverAddress,
+		AlgVersion: CurrentAlgVersion().String(),
 	}
 }
 
@@ -32,5 +34,6 @@ func (f *FileContentWithMetadata) String() string {
 		   fmt.Sprintf("Key ID:                   %s\n", f.Metadata.KeyId) +
 		   // TODO: Use smaller precision for time
 		   fmt.Sprintf("Expires at:               %s (in %s)\n", f.Metadata.Expiration.String(), time.Until(f.Metadata.Expiration).String()) +
-		   fmt.Sprintf("Server Address:           %s\n", f.Metadata.ServerAddress)
+		   fmt.Sprintf("Server Address:           %s\n", f.Metadata.ServerAddress) +
+		   fmt.Sprintf("Algorithm Version:        %s\n", f.Metadata.AlgVersion)
 }
