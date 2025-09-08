@@ -10,7 +10,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	keyPair, err := GenerateKeyPair()
 	if err != nil {
 		t.Fatalf("Failed to generate key pair: %v", err)
-	}	
+	}
 
 	tests := []struct {
 		name    string
@@ -45,7 +45,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test encryption
-			encrypted, err := Encrypt(tt.content, keyPair.BroadcastKey)
+			encrypted, err := EncryptRsa(tt.content, keyPair.BroadcastKey)
 			if err != nil {
 				t.Errorf("Encrypt() error = %v", err)
 				return
@@ -64,7 +64,7 @@ func TestEncryptDecrypt(t *testing.T) {
 			}
 
 			// Test decryption
-			decrypted, err := Decrypt(encrypted, keyPair.VerificationKey)
+			decrypted, err := DecryptRsa(encrypted, keyPair.VerificationKey)
 			if err != nil {
 				t.Errorf("Decrypt() error = %v", err)
 				return
@@ -88,7 +88,7 @@ func TestEncryptInvalidKey(t *testing.T) {
 
 	tests := []struct {
 		name string
-		key *PublicKey
+		key  *PublicKey
 	}{
 		{
 			name: "Nil N",
@@ -136,7 +136,7 @@ func TestEncryptInvalidKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := Encrypt("test content", tt.key)
+			_, err := EncryptRsa("test content", tt.key)
 			if err == nil {
 				t.Error("Encrypt() should return error for invalid key")
 			}
@@ -178,7 +178,7 @@ func TestDecryptInvalidInput(t *testing.T) {
 			}()
 
 			// We only care that it does not panic, error or not is fine
-			_, _ = Decrypt(tt.content, keyPair.VerificationKey)
+			_, _ = DecryptRsa(tt.content, keyPair.VerificationKey)
 		})
 	}
 }
@@ -190,14 +190,14 @@ func TestDecryptInvalidKey(t *testing.T) {
 		t.Fatalf("Failed to generate key pair: %v", err)
 	}
 
-	encrypted, err := Encrypt("test content", keyPair.BroadcastKey)
+	encrypted, err := EncryptRsa("test content", keyPair.BroadcastKey)
 	if err != nil {
 		t.Fatalf("Failed to encrypt test content: %v", err)
 	}
 
 	tests := []struct {
 		name string
-		key *PrivateKey
+		key  *PrivateKey
 	}{
 		{
 			name: "Nil N",
@@ -238,7 +238,7 @@ func TestDecryptInvalidKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := Decrypt(encrypted, tt.key)
+			_, err := DecryptRsa(encrypted, tt.key)
 			if err == nil {
 				t.Error("Decrypt() should return error for invalid key")
 			}
@@ -256,8 +256,8 @@ func TestEncryptConsistency(t *testing.T) {
 	content := "Consistency test content"
 
 	// Encrypt multiple times and ensure results are consistent
-	encrypted1, err1 := Encrypt(content, keyPair.BroadcastKey)
-	encrypted2, err2 := Encrypt(content, keyPair.BroadcastKey)
+	encrypted1, err1 := EncryptRsa(content, keyPair.BroadcastKey)
+	encrypted2, err2 := EncryptRsa(content, keyPair.BroadcastKey)
 
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Encryption failed: err1=%v, err2=%v", err1, err2)

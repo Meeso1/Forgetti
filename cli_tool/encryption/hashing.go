@@ -1,8 +1,7 @@
 package encryption
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"forgetti-common/crypto"
 	"encoding/base64"
 )
 
@@ -12,7 +11,7 @@ const remoteSalt string = "remote"
 const localSalt string = "local"
 
 func HashRemotePartForEncryption(key string) (string, error) {
-	bytes, err := hashToSize(key, beforeEncryptionSalt, 32)
+	bytes, err := crypto.HashToSize(key, beforeEncryptionSalt, 32)
 	if err != nil {
 		return "", err
 	}
@@ -21,20 +20,11 @@ func HashRemotePartForEncryption(key string) (string, error) {
 }
 
 func HashEncryptedRemotePart(key string) ([]byte, error) {
-	return hashToSize(key, remoteSalt, 16)
+	return crypto.HashToSize(key, remoteSalt, 16)
 }
 
 func HashLocalPart(key string) ([]byte, error) {
-	return hashToSize(key, localSalt, 16)
+	return crypto.HashToSize(key, localSalt, 16)
 }
 
-func hashToSize(key string, salt string, size int) ([]byte, error) {
-	if size > 32 {
-		return nil, fmt.Errorf("size must be less than or equal to 32: got %d", size)
-	}
 
-	hash := sha256.New()
-	hash.Write([]byte(key))
-	hash.Write([]byte(salt))
-	return hash.Sum(nil)[:size], nil
-}

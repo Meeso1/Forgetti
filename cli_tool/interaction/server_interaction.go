@@ -67,7 +67,7 @@ func validateEncryptedKeyHash(keyHash string, encrypted string, serializedKey st
 		return err
 	}
 
-	decryptedKeyHash, err := crypto.Decrypt(encrypted, verificationKey)
+	decryptedKeyHash, err := crypto.DecryptRsa(encrypted, verificationKey)
 	if err != nil {
 		return err
 	}

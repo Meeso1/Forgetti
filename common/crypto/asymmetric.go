@@ -9,7 +9,7 @@ import (
 const paddingByte byte = 7
 const paddingSize int = 11
 
-func Encrypt(content string, key *PublicKey) (string, error) {
+func EncryptRsa(content string, key *PublicKey) (string, error) {
 	if err := ValidatePublicKey(key); err != nil {
 		return "", fmt.Errorf("invalid public key: %w", err)
 	}
@@ -21,9 +21,9 @@ func Encrypt(content string, key *PublicKey) (string, error) {
 	chunkSize := key.N.BitLen()/8 - paddingSize - 1
 	result := make([]byte, 0, len(escaped)/chunkSize+1)
 	for i := 0; i < len(escaped); i += chunkSize {
-		end := min(i + chunkSize, len(escaped))
+		end := min(i+chunkSize, len(escaped))
 
-		encryptedChunk, err := encryptChunk(escaped[i:end], key)
+		encryptedChunk, err := encryptChunkRsa(escaped[i:end], key)
 		if err != nil {
 			return "", fmt.Errorf("failed to encrypt chunk: %w", err)
 		}
@@ -34,13 +34,13 @@ func Encrypt(content string, key *PublicKey) (string, error) {
 	return base64.StdEncoding.EncodeToString(result), nil
 }
 
-func encryptChunk(chunk []byte, key *PublicKey) ([]byte, error) {
+func encryptChunkRsa(chunk []byte, key *PublicKey) ([]byte, error) {
 	chunkWithPadding := make([]byte, key.N.BitLen()/8-1) // We need to ensure that the chunk is smaller than N
 	// Fill the chunk with padding bytes
 	for i := 0; i < len(chunkWithPadding); i++ {
 		chunkWithPadding[i] = paddingByte
 	}
-	
+
 	// Copy the chunk at the start
 	copy(chunkWithPadding, chunk)
 
@@ -58,7 +58,7 @@ func encryptChunk(chunk []byte, key *PublicKey) ([]byte, error) {
 
 // TODO: Implement some "signing" mechanism, and return error if the signature is not present in decrypted content
 // This will prevent someone from guessing the content to decrypt, and subsequently guessing the exponent from public key
-func Decrypt(encryptedContent string, key *PrivateKey) (string, error) {
+func DecryptRsa(encryptedContent string, key *PrivateKey) (string, error) {
 	if err := ValidatePrivateKey(key); err != nil {
 		return "", fmt.Errorf("invalid private key: %w", err)
 	}
@@ -70,15 +70,15 @@ func Decrypt(encryptedContent string, key *PrivateKey) (string, error) {
 
 	chunkSize := key.N.BitLen() / 8
 	if chunkSize <= paddingSize {
-		return "", fmt.Errorf("'N' is too small: %d bits (N) <= %d bytes (padding size)", 
-			key.N.BitLen(), paddingSize * 8)
+		return "", fmt.Errorf("'N' is too small: %d bits (N) <= %d bytes (padding size)",
+			key.N.BitLen(), paddingSize*8)
 	}
-	
+
 	result := make([]byte, 0, len(encryptedBytes)/chunkSize+1)
 	for i := 0; i < len(encryptedBytes); i += chunkSize {
-		end := min(i + chunkSize, len(encryptedBytes))
+		end := min(i+chunkSize, len(encryptedBytes))
 
-		encryptedChunk, err := decryptChunk(encryptedBytes[i:end], key)
+		encryptedChunk, err := decryptChunkRsa(encryptedBytes[i:end], key)
 		if err != nil {
 			return "", fmt.Errorf("failed to decrypt chunk: %w", err)
 		}
@@ -91,12 +91,12 @@ func Decrypt(encryptedContent string, key *PrivateKey) (string, error) {
 	return string(result), nil
 }
 
-func decryptChunk(chunk []byte, key *PrivateKey) ([]byte, error) {
+func decryptChunkRsa(chunk []byte, key *PrivateKey) ([]byte, error) {
 	chunkAsInt := new(big.Int).SetBytes(chunk)
 	decryptedChunkAsInt := new(big.Int).Exp(chunkAsInt, key.D, key.N)
 
 	if decryptedChunkAsInt.BitLen()/8 > key.N.BitLen()/8 {
-		return nil, fmt.Errorf("decrypted chunk is too large: %d bits (decrypted chunk) > %d bits (N)", 
+		return nil, fmt.Errorf("decrypted chunk is too large: %d bits (decrypted chunk) > %d bits (N)",
 			decryptedChunkAsInt.BitLen(), key.N.BitLen())
 	}
 

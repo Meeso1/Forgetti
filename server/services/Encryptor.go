@@ -36,7 +36,7 @@ func (e *EncryptorImpl) CreateNewKeyAndEncrypt(content string, expiration time.T
 
 	e.keyStore.StoreKey(key)
 
-	encryptedContent, err := crypto.Encrypt(content, key.Key)
+	encryptedContent, err := crypto.EncryptAsymmetric(content, key.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (e *EncryptorImpl) EncryptWithExistingKey(content string, keyId string) (st
 		return "", err
 	}
 
-	encryptedContent, err := crypto.Encrypt(content, key.Key)
+	encryptedContent, err := crypto.EncryptAsymmetric(content, key.Key)
 	if err != nil {
 		return "", err
 	}
