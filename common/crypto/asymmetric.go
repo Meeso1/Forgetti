@@ -56,8 +56,6 @@ func encryptChunkRsa(chunk []byte, key *PublicKey) ([]byte, error) {
 	return encryptedBytes, nil
 }
 
-// TODO: Implement some "signing" mechanism, and return error if the signature is not present in decrypted content
-// This will prevent someone from guessing the content to decrypt, and subsequently guessing the exponent from public key
 func DecryptRsa(encryptedContent string, key *PrivateKey) (string, error) {
 	if err := ValidatePrivateKey(key); err != nil {
 		return "", fmt.Errorf("invalid private key: %w", err)

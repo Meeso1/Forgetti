@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// TODO: SQLite handles time as string - store int instead
 type KeyRecord struct {
 	Id            string    `gorm:"primarykey;column:id" json:"id"`
 	Expiration    time.Time `gorm:"column:expiration;not null" json:"expiration"`

@@ -30,10 +30,10 @@ func ToFileMetadata(metadata dto.Metadata, serverAddress string) Metadata {
 }
 
 func (f *FileContentWithMetadata) String() string {
+	roundedDuration := time.Until(f.Metadata.Expiration).Round(time.Second)
 	return fmt.Sprintf("Encrypted content length: %d bytes\n", len(f.FileContent)) +
 		   fmt.Sprintf("Key ID:                   %s\n", f.Metadata.KeyId) +
-		   // TODO: Use smaller precision for time
-		   fmt.Sprintf("Expires at:               %s (in %s)\n", f.Metadata.Expiration.String(), time.Until(f.Metadata.Expiration).String()) +
+		   fmt.Sprintf("Expires at:               %s (in %s)\n", f.Metadata.Expiration.String(), roundedDuration.String()) +
 		   fmt.Sprintf("Server Address:           %s\n", f.Metadata.ServerAddress) +
 		   fmt.Sprintf("Algorithm Version:        %s\n", f.Metadata.AlgVersion)
 }
