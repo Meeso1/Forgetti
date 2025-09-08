@@ -12,20 +12,20 @@ type DataProtection interface {
 }
 
 type DataProtectionImpl struct {
-	key []byte
+	key string
 }
 
-func NewDataProtection(config *config.Config) (DataProtection, error) {
-	key, err := base64.StdEncoding.DecodeString(config.DataProtection.KeyBase64)
-	if err != nil {
-		return nil, err
-	}
-
-	return &DataProtectionImpl{key: key}, nil
+func NewDataProtection(config *config.Config) DataProtection {
+	return &DataProtectionImpl{key: config.DataProtection.Key}
 }
 
 func (d *DataProtectionImpl) Protect(data string) (string, error) {
-	encrypted, err := crypto.EncryptAes256([]byte(data), d.key)
+	keyHash, err := crypto.HashToSize(d.key, "data_protection", 32)
+	if err != nil {
+		return "", err
+	}
+
+	encrypted, err := crypto.EncryptAes256([]byte(data), keyHash)
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +39,12 @@ func (d *DataProtectionImpl) Unprotect(data string) (string, error) {
 		return "", err
 	}
 
-	decrypted, err := crypto.DecryptAes256(encrypted, d.key)
+	keyHash, err := crypto.HashToSize(d.key, "data_protection", 32)
+	if err != nil {
+		return "", err
+	}
+
+	decrypted, err := crypto.DecryptAes256(encrypted, keyHash)
 	if err != nil {
 		return "", err
 	}

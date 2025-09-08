@@ -26,11 +26,7 @@ func CreateServiceContainer(cfg *config.Config) (*ServiceContainer, error) {
 	keyRepo := repositories.NewKeyRepo(database)
 	recentlyExpiredRepo := repositories.NewRecentlyExpiredRepo(database)
 	
-	dataProtection, err := NewDataProtection(cfg)
-	if err != nil {
-		return nil, err
-	}
-
+	dataProtection := NewDataProtection(cfg)
 	keyStore := NewKeyStore(keyRepo, recentlyExpiredRepo, dataProtection, cfg)
 	encryptor := CreateEncryptor(keyStore)
 

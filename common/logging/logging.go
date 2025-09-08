@@ -1,6 +1,7 @@
 package logging
 
 import (
+	commonIo "forgetti-common/io"
 	"fmt"
 	"io"
 	"os"
@@ -42,6 +43,12 @@ var (
 
 // SetGlobalConfig sets the global logging configuration
 func SetGlobalConfig(config Config) error {
+	pathFromBin, err := commonIo.GetRelativePathFromBin(config.LogFile)
+	if err != nil {
+		return fmt.Errorf("failed to get relative path from bin: %w", err)
+	}
+	config.LogFile = pathFromBin
+
 	configMutex.Lock()
 	defer configMutex.Unlock()
 

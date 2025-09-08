@@ -34,7 +34,7 @@ type Config struct {
 	} `json:"logging"`
 
 	DataProtection struct {
-		KeyBase64 string `json:"key" env:"DATA_PROTECTION_KEY" env-default:"" validate:"required"`
+		Key string `json:"key" env:"DATA_PROTECTION_KEY" env-default:"" validate:"required"`
 	} `json:"data_protection"`
 }
 
