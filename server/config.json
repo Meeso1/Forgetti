@@ -15,7 +15,8 @@
   },
   "logging": {
     "level": "info",
-    "format": "json"
+    "log_file": "server.log",
+    "log_directory": "logs"
   },
   "data_protection": {
     "key": "CHANGE_ME"

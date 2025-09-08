@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -62,6 +63,10 @@ func SetGlobalConfig(config Config) error {
 
 	// Open new log file if specified
 	if config.LogFile != "" {
+		if err := os.MkdirAll(filepath.Dir(config.LogFile), 0755); err != nil {
+			return fmt.Errorf("failed to create directories: %w", err)
+		}
+
 		var err error
 		logFile, err = os.OpenFile(config.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
