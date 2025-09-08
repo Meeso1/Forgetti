@@ -3,6 +3,7 @@ package commands
 import (
 	"Forgetti/io"
 	"fmt"
+	"forgetti-common/logging"
 )
 
 type ReadMetadataInput struct {
@@ -20,7 +21,11 @@ func CreateReadMetadataInput(path string) (*ReadMetadataInput, error) {
 }
 
 func ReadMetadata(input ReadMetadataInput) error {
-	logger := MakeLogger(LogLevelInfo)
+	logging.SetGlobalConfig(logging.Config{
+		LogLevel: logging.LogLevelInfo,
+		LogFile:  "", // CLI tool logs only to console
+	})
+	logger := logging.MakeLogger("read_metadata")
 
 	logger.Info("File: '%s'", input.InputPath)
 	contentWithMetadata, err := io.ReadContentWithMetadataFromFile(input.InputPath)

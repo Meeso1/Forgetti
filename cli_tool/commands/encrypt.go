@@ -7,6 +7,7 @@ import (
 	"Forgetti/io"
 	"Forgetti/models"
 	"fmt"
+	"forgetti-common/logging"
 	"strconv"
 	"strings"
 	"time"
@@ -19,7 +20,7 @@ type EncryptInput struct {
 	Expiration    time.Time
 	ServerAddress string
 	Overwrite     bool
-	LogLevel      LogLevel
+	LogLevel      logging.LogLevel
 }
 
 func CreateEncryptInput(
@@ -72,12 +73,12 @@ func CreateEncryptInput(
 		return nil, fmt.Errorf("server address is required")
 	}
 
-	logLevel := LogLevelInfo
+	logLevel := logging.LogLevelInfo
 	if verbose {
-		logLevel = LogLevelVerbose
+		logLevel = logging.LogLevelVerbose
 	}
 	if quiet {
-		logLevel = LogLevelError
+		logLevel = logging.LogLevelError
 	}
 
 	return &EncryptInput{
@@ -128,7 +129,11 @@ func parseExpiration(expiresIn string) (time.Time, error) {
 }
 
 func Encrypt(input EncryptInput) error {
-	logger := MakeLogger(input.LogLevel)
+	logging.SetGlobalConfig(logging.Config{
+		LogLevel: input.LogLevel,
+		LogFile:  "", // CLI tool logs only to console
+	})
+	logger := logging.MakeLogger("encrypt")
 
 	logger.Verbose("Reading input file '%s'", input.InputPath)
 	content, err := io.ReadFile(input.InputPath)

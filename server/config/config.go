@@ -27,8 +27,10 @@ type Config struct {
 	} `json:"database"`
 
 	Logging struct {
-		Level  string `json:"level" env:"LOG_LEVEL" env-default:"info" validate:"oneof=debug info warn error"`
-		Format string `json:"format" env:"LOG_FORMAT" env-default:"json" validate:"oneof=json text"`
+		Level        string `json:"level" env:"LOG_LEVEL" env-default:"info" validate:"oneof=debug info warn error"`
+		Format       string `json:"format" env:"LOG_FORMAT" env-default:"json" validate:"oneof=json text"`
+		LogFile      string `json:"log_file" env:"LOG_FILE" env-default:""`
+		LogDirectory string `json:"log_directory" env:"LOG_DIRECTORY" env-default:"./logs"`
 	} `json:"logging"`
 
 	DataProtection struct {

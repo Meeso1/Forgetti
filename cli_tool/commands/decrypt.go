@@ -6,6 +6,7 @@ import (
 	"Forgetti/io"
 	"Forgetti/models"
 	"fmt"
+	"forgetti-common/logging"
 	"strings"
 	"time"
 )
@@ -16,7 +17,7 @@ type DecryptInput struct {
 	Password      string
 	ServerAddress string
 	Overwrite     bool
-	LogLevel      LogLevel
+	LogLevel      logging.LogLevel
 }
 
 func CreateDecryptInput(
@@ -52,12 +53,12 @@ func CreateDecryptInput(
 		return nil, fmt.Errorf("password is required")
 	}
 
-	logLevel := LogLevelInfo
+	logLevel := logging.LogLevelInfo
 	if verbose {
-		logLevel = LogLevelVerbose
+		logLevel = logging.LogLevelVerbose
 	}
 	if quiet {
-		logLevel = LogLevelError
+		logLevel = logging.LogLevelError
 	}
 
 	return &DecryptInput{
@@ -71,7 +72,11 @@ func CreateDecryptInput(
 }
 
 func Decrypt(input DecryptInput) error {
-	logger := MakeLogger(input.LogLevel)
+	logging.SetGlobalConfig(logging.Config{
+		LogLevel: input.LogLevel,
+		LogFile:  "", // CLI tool logs only to console
+	})
+	logger := logging.MakeLogger("decrypt")
 
 	logger.Verbose("Reading file '%s'", input.InputPath)
 	contentWithMetadata, err := io.ReadContentWithMetadataFromFile(input.InputPath)
